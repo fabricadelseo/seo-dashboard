@@ -410,20 +410,27 @@ with tab_conv:
         ke_prev = d.get("key_events_prev", {})
         total = sum(ke.values())
         total_prev = sum(ke_prev.values())
+        delta = pct(total, total_prev)
+        if delta is not None and delta > 0:
+            tend = f"🟢 +{delta:.1f}%"
+        elif delta is not None and delta < 0:
+            tend = f"🔴 {delta:.1f}%"
+        else:
+            tend = "➖ —"
         rows_conv.append({
             "Cliente": c,
-            "Conversiones": total,
-            "Semana anterior": total_prev,
-            "Δ": pct(total, total_prev),
+            "Conv. actual": total,
+            "Conv. anterior": total_prev,
+            "Tendencia": tend,
             "Revenue (€)": d.get("revenue", 0) or 0,
-            "Eventos": ", ".join(f"{k}: {v}" for k, v in ke.items()) if ke else "—",
+            "Desglose": "\n".join(f"• {k}: {v}" for k, v in ke.items()) if ke else "—",
             "GA4": "✓" if d.get("ga4_ok") else "✗",
         })
 
-    df_conv = pd.DataFrame(rows_conv).sort_values("Conversiones", ascending=False)
+    df_conv = pd.DataFrame(rows_conv).sort_values("Conv. actual", ascending=False)
 
     # Alertas: clientes con GA4 ok pero sin conversiones
-    sin_conv = df_conv[(df_conv["GA4"] == "✓") & (df_conv["Conversiones"] == 0)]
+    sin_conv = df_conv[(df_conv["GA4"] == "✓") & (df_conv["Conv. actual"] == 0)]
     if not sin_conv.empty:
         nombres = ", ".join(sin_conv["Cliente"].tolist())
         st.warning(f"Clientes con GA4 activo pero sin conversiones esta semana: **{nombres}**")
@@ -437,7 +444,6 @@ with tab_conv:
     })
 
     clientes_con_conv = [c for c, d in clientes_data.items() if sum(d.get("key_events", {}).values()) > 0]
-    # Ordenar por total conversiones desc (invertido para barras horizontales)
     clientes_con_conv.sort(key=lambda c: sum(clientes_data[c].get("key_events", {}).values()))
 
     if clientes_con_conv and all_events:
@@ -467,53 +473,21 @@ with tab_conv:
 
     st.divider()
 
-    # Tabla completa con desglose de eventos y delta coloreado
-    def _color_conv_delta(series):
-        out = []
-        for v in series:
-            if v is None or (isinstance(v, float) and pd.isna(v)):
-                out.append("")
-            elif isinstance(v, (int, float)) and v > 0:
-                out.append("color: #22c55e; font-weight: 600")
-            elif isinstance(v, (int, float)) and v < 0:
-                out.append("color: #ef4444; font-weight: 600")
-            else:
-                out.append("")
-        return out
 
     hay_revenue = df_conv["Revenue (€)"].gt(0).any()
-    cols_tbl = ["Cliente", "Conversiones", "Semana anterior", "Δ", "Eventos", "GA4"]
+    cols_tbl = ["Cliente", "Conv. actual", "Conv. anterior", "Tendencia", "Desglose", "GA4"]
     if hay_revenue:
         cols_tbl.insert(4, "Revenue (€)")
 
     col_cfg = {
-        "Conversiones": st.column_config.NumberColumn("Conv. esta semana"),
-        "Semana anterior": st.column_config.NumberColumn("Semana anterior"),
-        "Δ": st.column_config.NumberColumn("Δ %", format="%+.1f%%"),
-        "Eventos": st.column_config.TextColumn("Desglose eventos", width="large"),
+        "Conv. actual": st.column_config.NumberColumn("Esta semana"),
+        "Conv. anterior": st.column_config.NumberColumn("Semana anterior"),
+        "Tendencia": st.column_config.TextColumn("Tendencia"),
+        "Desglose": st.column_config.TextColumn("Desglose por evento", width="large"),
+        "Revenue (€)": st.column_config.NumberColumn("Revenue (€)", format="%.0f €"),
     }
-    if hay_revenue:
-        col_cfg["Revenue (€)"] = st.column_config.NumberColumn("Revenue (€)", format="%.0f €")
 
-    def _color_conv_total(series):
-        out = []
-        for cliente, v in zip(df_conv["Cliente"], series):
-            prev = df_conv.loc[df_conv["Cliente"] == cliente, "Semana anterior"].values[0]
-            if v > prev:
-                out.append("color: #22c55e; font-weight: 600")
-            elif v < prev:
-                out.append("color: #ef4444; font-weight: 600")
-            else:
-                out.append("")
-        return out
-
-    df_tbl = df_conv[cols_tbl].reset_index(drop=True)
-    styled_conv = (
-        df_tbl.style
-        .apply(_color_conv_delta, subset=["Δ"])
-        .apply(_color_conv_total, subset=["Conversiones"])
-    )
-    st.dataframe(styled_conv, use_container_width=True, hide_index=True, column_config=col_cfg)
+    st.dataframe(df_conv[cols_tbl], use_container_width=True, hide_index=True, column_config=col_cfg)
 
 
 # ──────────── EVOLUCIÓN ────────────
