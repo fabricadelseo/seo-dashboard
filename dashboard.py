@@ -20,11 +20,24 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Auth simple ────────────────────────────────
-if "password" in st.secrets:
-    pwd = st.text_input("🔐 Contraseña", type="password")
-    if pwd != st.secrets["password"]:
-        st.stop()
+# ── Auth Google ────────────────────────────────
+ALLOWED_DOMAIN = st.secrets.get("allowed_domain", "")
+ALLOWED_EMAILS = [e.strip() for e in st.secrets.get("allowed_emails", "").split(",") if e.strip()]
+
+if not st.user.is_logged_in:
+    st.title("Dashboard SEO — La Fábrica del SEO")
+    st.button("Iniciar sesión con Google", on_click=st.login, args=("google",))
+    st.stop()
+
+email = st.user.email or ""
+if ALLOWED_EMAILS and email not in ALLOWED_EMAILS:
+    st.error(f"Acceso no autorizado para {email}.")
+    st.button("Cerrar sesión", on_click=st.logout)
+    st.stop()
+if ALLOWED_DOMAIN and not email.endswith(f"@{ALLOWED_DOMAIN}"):
+    st.error(f"Acceso restringido al dominio @{ALLOWED_DOMAIN}.")
+    st.button("Cerrar sesión", on_click=st.logout)
+    st.stop()
 
 
 # ──────────────────────────────────────────────
@@ -141,6 +154,9 @@ with st.sidebar:
     if st.button("Refrescar datos", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+    st.divider()
+    st.caption(f"👤 {st.user.email}")
+    st.button("Cerrar sesión", on_click=st.logout, use_container_width=True)
     st.divider()
     st.caption("Cron: lunes 08:10 (Madrid)")
     st.caption(f"Bucket: `{BUCKET}`")
