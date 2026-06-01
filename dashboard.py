@@ -163,8 +163,8 @@ if not informe and not historico and not metricas:
 # Tabs
 # ──────────────────────────────────────────────
 
-tab_overview, tab_clientes, tab_evolucion, tab_alertas, tab_informe = st.tabs([
-    "Resumen", "Clientes", "Evolución", "Alertas", "Informe",
+tab_overview, tab_clientes, tab_conv, tab_evolucion, tab_alertas, tab_informe = st.tabs([
+    "Resumen", "Clientes", "Conversiones", "Evolución", "Alertas", "Informe",
 ])
 
 
@@ -372,6 +372,113 @@ with tab_clientes:
 
     st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_config)
     st.caption(f"Mostrando {len(df)} de {len(scores)} clientes")
+
+
+# ──────────── CONVERSIONES ────────────
+with tab_conv:
+    if not metricas or "clientes" not in metricas:
+        st.info("Sin datos de métricas todavía.")
+        st.stop()
+
+    clientes_data = metricas["clientes"]
+    st.caption(f"Semana {metricas['fecha_desde']} → {metricas['fecha_hasta']}  vs  semana anterior")
+
+    # Interpretación de Claude si la hay
+    if informe:
+        secciones = informe.get("secciones", {})
+        interp = next(
+            (v for k, v in secciones.items() if any(w in k.upper() for w in ("CONVERS", "INSIGHT", "RESUMEN"))),
+            None,
+        )
+        if interp:
+            st.info(interp)
+        else:
+            analisis = informe.get("analisis", "")
+            # Extraer párrafos que mencionan conversiones
+            parrafos = [p for p in analisis.split("\n") if "convers" in p.lower() or "revenue" in p.lower() or "lead" in p.lower()]
+            if parrafos:
+                st.info("\n".join(parrafos[:5]))
+
+    st.markdown("**Nota:** El volumen esperado de conversiones depende del sector. Un arquitecto puede tener 2-3 leads de alto valor; una clínica dental puede tener 20-30 citas. Compara siempre contra semanas anteriores del mismo cliente, no entre clientes.")
+
+    st.divider()
+
+    # Datos por cliente
+    rows_conv = []
+    for c, d in clientes_data.items():
+        ke = d.get("key_events", {})
+        ke_prev = d.get("key_events_prev", {})
+        total = sum(ke.values())
+        total_prev = sum(ke_prev.values())
+        rows_conv.append({
+            "Cliente": c,
+            "Conversiones": total,
+            "Semana anterior": total_prev,
+            "Δ": pct(total, total_prev),
+            "Revenue (€)": d.get("revenue", 0) or 0,
+            "Eventos": ", ".join(f"{k}: {v}" for k, v in ke.items()) if ke else "—",
+            "GA4": "✓" if d.get("ga4_ok") else "✗",
+        })
+
+    df_conv = pd.DataFrame(rows_conv).sort_values("Conversiones", ascending=False)
+
+    # Alertas: clientes con GA4 ok pero sin conversiones
+    sin_conv = df_conv[(df_conv["GA4"] == "✓") & (df_conv["Conversiones"] == 0)]
+    if not sin_conv.empty:
+        nombres = ", ".join(sin_conv["Cliente"].tolist())
+        st.warning(f"Clientes con GA4 activo pero sin conversiones esta semana: **{nombres}**")
+
+    # Gráfico barras: actual vs anterior
+    df_plot = df_conv[df_conv["Conversiones"] > 0].sort_values("Conversiones", ascending=True)
+    if not df_plot.empty:
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            y=df_plot["Cliente"], x=df_plot["Semana anterior"],
+            name="Semana anterior", orientation="h", marker_color="#94a3b8",
+        ))
+        fig.add_trace(go.Bar(
+            y=df_plot["Cliente"], x=df_plot["Conversiones"],
+            name="Esta semana", orientation="h", marker_color="#3b82f6",
+        ))
+        fig.update_layout(
+            barmode="overlay",
+            height=max(300, len(df_plot) * 36),
+            margin=dict(t=10, b=10, l=10, r=10),
+            xaxis_title="Conversiones",
+            yaxis_title="",
+            legend=dict(orientation="h", y=1.05),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+
+    # Tabla completa con desglose de eventos y delta coloreado
+    def _color_conv_delta(series):
+        out = []
+        for v in series:
+            if v is None or (isinstance(v, float) and pd.isna(v)):
+                out.append("")
+            elif isinstance(v, (int, float)) and v > 0:
+                out.append("color: #22c55e; font-weight: 600")
+            elif isinstance(v, (int, float)) and v < 0:
+                out.append("color: #ef4444; font-weight: 600")
+            else:
+                out.append("")
+        return out
+
+    df_tbl = df_conv[["Cliente", "Conversiones", "Semana anterior", "Δ", "Revenue (€)", "Eventos", "GA4"]]
+    styled_conv = df_tbl.style.apply(_color_conv_delta, subset=["Δ"])
+    st.dataframe(
+        styled_conv,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Conversiones": st.column_config.NumberColumn("Conv. esta semana"),
+            "Semana anterior": st.column_config.NumberColumn("Semana anterior"),
+            "Δ": st.column_config.NumberColumn("Δ %", format="%+.1f%%"),
+            "Revenue (€)": st.column_config.NumberColumn("Revenue (€)", format="%.0f €"),
+        },
+    )
 
 
 # ──────────── EVOLUCIÓN ────────────
