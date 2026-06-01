@@ -427,7 +427,7 @@ with tab_conv:
     sin_conv = df_conv[(df_conv["Conv. actual"] == 0) & (df_conv["Conv. anterior"] > 0)]
     if not sin_conv.empty:
         for _, row in sin_conv.iterrows():
-            st.warning(f"**{row['Cliente']}** no tiene conversiones esta semana, pero la semana anterior tuvo {int(row['Conv. anterior'])}.")
+            st.warning(f"⚠️ **{row['Cliente']}** no tiene conversiones esta semana, pero la semana anterior tuvo {int(row['Conv. anterior'])}.")
 
 
 
