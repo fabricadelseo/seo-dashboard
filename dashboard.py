@@ -118,10 +118,8 @@ def delta_score(actual, anterior):
 
 def pct(curr, prev):
     if not prev:
-        return "—"
-    d = (curr - prev) / prev * 100
-    arrow = "↑" if d > 0 else "↓"
-    return f"{arrow} {abs(d):.1f}%"
+        return None
+    return round((curr - prev) / prev * 100, 1)
 
 
 # ──────────────────────────────────────────────
@@ -342,9 +340,37 @@ with tab_clientes:
     col_config = {
         "Score": st.column_config.ProgressColumn("Score", min_value=0, max_value=100, format="%d"),
         "Δ Score": st.column_config.NumberColumn("Δ Score", format="%+d"),
+        "Conv.": st.column_config.NumberColumn("Conv."),
+        "Δ Conv.": st.column_config.NumberColumn("Δ Conv.", format="%+.1f%%"),
+        "Orgánico": st.column_config.NumberColumn("Orgánico"),
+        "Δ Org.": st.column_config.NumberColumn("Δ Org.", format="%+.1f%%"),
+        "GSC clics": st.column_config.NumberColumn("GSC clics"),
+        "Δ GSC": st.column_config.NumberColumn("Δ GSC", format="%+.1f%%"),
+        "IA": st.column_config.NumberColumn("IA"),
     }
 
-    st.dataframe(df[cols_show], use_container_width=True, hide_index=True, column_config=col_config)
+    delta_cols = [c for c in cols_show if c.startswith("Δ") and c != "Δ Score"]
+
+    def _color_delta(series):
+        out = []
+        for v in series:
+            if v is None or (isinstance(v, float) and pd.isna(v)):
+                out.append("")
+            elif isinstance(v, (int, float)) and v > 0:
+                out.append("color: #22c55e; font-weight: 600")
+            elif isinstance(v, (int, float)) and v < 0:
+                out.append("color: #ef4444; font-weight: 600")
+            else:
+                out.append("")
+        return out
+
+    df_show = df[cols_show]
+    if delta_cols:
+        styled = df_show.style.apply(_color_delta, subset=delta_cols)
+    else:
+        styled = df_show.style
+
+    st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_config)
     st.caption(f"Mostrando {len(df)} de {len(scores)} clientes")
 
 
