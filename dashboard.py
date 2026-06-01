@@ -415,7 +415,7 @@ with tab_conv:
             "Cliente": c,
             "Conv. actual": total,
             "Conv. anterior": total_prev,
-            "Δ %": f"+{delta:.1f}%" if delta and delta > 0 else (f"{delta:.1f}%" if delta else "—"),
+            "Δ %": delta,
             "Revenue (€)": d.get("revenue", 0) or 0,
             "Desglose": ", ".join(f"{k} ({v})" for k, v in ke.items()) if ke else "—",
             "GA4": "✓" if d.get("ga4_ok") else "✗",
@@ -439,12 +439,21 @@ with tab_conv:
     col_cfg = {
         "Conv. actual": st.column_config.NumberColumn("Esta semana"),
         "Conv. anterior": st.column_config.NumberColumn("Semana anterior"),
-        "Δ %": st.column_config.TextColumn("Δ %"),
+        "Δ %": st.column_config.NumberColumn("Δ %", format="%+.1f%%"),
         "Desglose": st.column_config.TextColumn("Desglose por evento", width="large"),
         "Revenue (€)": st.column_config.NumberColumn("Revenue (€)", format="%.0f €"),
     }
 
-    st.dataframe(df_conv[cols_tbl], use_container_width=True, hide_index=True, column_config=col_cfg)
+    def _color_delta(series):
+        return [
+            "color: #22c55e; font-weight: 600" if (v is not None and v > 0)
+            else "color: #ef4444; font-weight: 600" if (v is not None and v < 0)
+            else ""
+            for v in series
+        ]
+
+    styled = df_conv[cols_tbl].style.apply(_color_delta, subset=["Δ %"])
+    st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_cfg)
 
 
 # ──────────── EVOLUCIÓN ────────────
