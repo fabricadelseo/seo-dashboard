@@ -411,17 +411,11 @@ with tab_conv:
         total = sum(ke.values())
         total_prev = sum(ke_prev.values())
         delta = pct(total, total_prev)
-        if delta is not None and delta > 0:
-            tend = f"🟢 +{delta:.1f}%"
-        elif delta is not None and delta < 0:
-            tend = f"🔴 {delta:.1f}%"
-        else:
-            tend = "➖ —"
         rows_conv.append({
             "Cliente": c,
             "Conv. actual": total,
             "Conv. anterior": total_prev,
-            "Tendencia": tend,
+            "Δ %": f"+{delta:.1f}%" if delta and delta > 0 else (f"{delta:.1f}%" if delta else "—"),
             "Revenue (€)": d.get("revenue", 0) or 0,
             "Desglose": ", ".join(f"{k} ({v})" for k, v in ke.items()) if ke else "—",
             "GA4": "✓" if d.get("ga4_ok") else "✗",
@@ -435,54 +429,17 @@ with tab_conv:
         nombres = ", ".join(sin_conv["Cliente"].tolist())
         st.warning(f"Clientes con GA4 activo pero sin conversiones esta semana: **{nombres}**")
 
-    # Gráfico barras apiladas por tipo de evento
-    # Recopilar todos los nombres de evento distintos
-    all_events = sorted({
-        ev
-        for d in clientes_data.values()
-        for ev in d.get("key_events", {}).keys()
-    })
-
-    clientes_con_conv = [c for c, d in clientes_data.items() if sum(d.get("key_events", {}).values()) > 0]
-    clientes_con_conv.sort(key=lambda c: sum(clientes_data[c].get("key_events", {}).values()))
-
-    if clientes_con_conv and all_events:
-        fig = go.Figure()
-        colores_ev = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444",
-                      "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#6366f1"]
-        for i, ev in enumerate(all_events):
-            valores = [clientes_data[c].get("key_events", {}).get(ev, 0) for c in clientes_con_conv]
-            fig.add_trace(go.Bar(
-                y=clientes_con_conv,
-                x=valores,
-                name=ev,
-                orientation="h",
-                marker_color=colores_ev[i % len(colores_ev)],
-                text=[str(v) if v > 0 else "" for v in valores],
-                textposition="inside",
-            ))
-        fig.update_layout(
-            barmode="stack",
-            height=max(300, len(clientes_con_conv) * 40),
-            margin=dict(t=10, b=10, l=10, r=10),
-            xaxis_title="Conversiones",
-            yaxis_title="",
-            legend=dict(orientation="h", y=1.08),
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    st.divider()
 
 
     hay_revenue = df_conv["Revenue (€)"].gt(0).any()
-    cols_tbl = ["Cliente", "Conv. actual", "Conv. anterior", "Tendencia", "Desglose", "GA4"]
+    cols_tbl = ["Cliente", "Conv. actual", "Conv. anterior", "Δ %", "Desglose", "GA4"]
     if hay_revenue:
         cols_tbl.insert(4, "Revenue (€)")
 
     col_cfg = {
         "Conv. actual": st.column_config.NumberColumn("Esta semana"),
         "Conv. anterior": st.column_config.NumberColumn("Semana anterior"),
-        "Tendencia": st.column_config.TextColumn("Tendencia"),
+        "Δ %": st.column_config.TextColumn("Δ %"),
         "Desglose": st.column_config.TextColumn("Desglose por evento", width="large"),
         "Revenue (€)": st.column_config.NumberColumn("Revenue (€)", format="%.0f €"),
     }
