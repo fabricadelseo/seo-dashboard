@@ -495,8 +495,24 @@ with tab_conv:
     if hay_revenue:
         col_cfg["Revenue (€)"] = st.column_config.NumberColumn("Revenue (€)", format="%.0f €")
 
-    df_tbl = df_conv[cols_tbl]
-    styled_conv = df_tbl.style.apply(_color_conv_delta, subset=["Δ"])
+    def _color_conv_total(series):
+        out = []
+        for cliente, v in zip(df_conv["Cliente"], series):
+            prev = df_conv.loc[df_conv["Cliente"] == cliente, "Semana anterior"].values[0]
+            if v > prev:
+                out.append("color: #22c55e; font-weight: 600")
+            elif v < prev:
+                out.append("color: #ef4444; font-weight: 600")
+            else:
+                out.append("")
+        return out
+
+    df_tbl = df_conv[cols_tbl].reset_index(drop=True)
+    styled_conv = (
+        df_tbl.style
+        .apply(_color_conv_delta, subset=["Δ"])
+        .apply(_color_conv_total, subset=["Conversiones"])
+    )
     st.dataframe(styled_conv, use_container_width=True, hide_index=True, column_config=col_cfg)
 
 
