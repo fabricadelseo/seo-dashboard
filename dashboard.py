@@ -399,8 +399,6 @@ with tab_conv:
             if parrafos:
                 st.info("\n".join(parrafos[:5]))
 
-    st.markdown("**Nota:** El volumen esperado de conversiones depende del sector. Un arquitecto puede tener 2-3 leads de alto valor; una clínica dental puede tener 20-30 citas. Compara siempre contra semanas anteriores del mismo cliente, no entre clientes.")
-
     st.divider()
 
     # Datos por cliente
