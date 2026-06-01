@@ -432,7 +432,7 @@ with tab_conv:
 
 
     hay_revenue = df_conv["Revenue (€)"].gt(0).any()
-    cols_tbl = ["Cliente", "Conv. actual", "Conv. anterior", "Δ %", "Desglose", "GA4"]
+    cols_tbl = ["Cliente", "Conv. actual", "Conv. anterior", "Δ %", "Desglose"]
     if hay_revenue:
         cols_tbl.insert(4, "Revenue (€)")
 
