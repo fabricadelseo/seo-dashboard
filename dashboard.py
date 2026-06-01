@@ -380,7 +380,7 @@ with tab_alertas:
         ]:
             contenido = next((v for k, v in secciones.items() if clave_busqueda in k.upper()), None)
             if contenido:
-                with st.expander(titulo, expanded=clave_busqueda == "ALERTA"):
+                with st.expander(titulo, expanded=True):
                     st.markdown(contenido)
 
 
