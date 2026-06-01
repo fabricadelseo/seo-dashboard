@@ -423,11 +423,11 @@ with tab_conv:
 
     df_conv = pd.DataFrame(rows_conv).sort_values("Conv. actual", ascending=False)
 
-    # Alertas: clientes con GA4 ok pero sin conversiones
-    sin_conv = df_conv[(df_conv["GA4"] == "✓") & (df_conv["Conv. actual"] == 0)]
+    # Aviso: clientes que normalmente tienen conversiones pero esta semana tienen 0
+    sin_conv = df_conv[(df_conv["Conv. actual"] == 0) & (df_conv["Conv. anterior"] > 0)]
     if not sin_conv.empty:
-        nombres = ", ".join(sin_conv["Cliente"].tolist())
-        st.warning(f"Clientes con GA4 activo pero sin conversiones esta semana: **{nombres}**")
+        for _, row in sin_conv.iterrows():
+            st.warning(f"**{row['Cliente']}** no tiene conversiones esta semana, pero la semana anterior tuvo {int(row['Conv. anterior'])}.")
 
 
 
