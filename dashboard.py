@@ -333,7 +333,7 @@ with tab_clientes:
     if estados:
         df = df[df["Estado"].isin(estados)]
 
-    cols_show = [" ", "Cliente", "Score", "Δ Score"]
+    cols_show = [" ", "Cliente"]
     if tiene_metricas:
         cols_show += ["Conv.", "Δ Conv.", "Revenue", "Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA"]
 
