@@ -383,22 +383,6 @@ with tab_conv:
     clientes_data = metricas["clientes"]
     st.caption(f"Semana {metricas['fecha_desde']} → {metricas['fecha_hasta']}  vs  semana anterior")
 
-    # Interpretación de Claude si la hay
-    if informe:
-        secciones = informe.get("secciones", {})
-        interp = next(
-            (v for k, v in secciones.items() if any(w in k.upper() for w in ("CONVERS", "INSIGHT", "RESUMEN"))),
-            None,
-        )
-        if interp:
-            st.info(interp)
-        else:
-            analisis = informe.get("analisis", "")
-            # Extraer párrafos que mencionan conversiones
-            parrafos = [p for p in analisis.split("\n") if "convers" in p.lower() or "revenue" in p.lower() or "lead" in p.lower()]
-            if parrafos:
-                st.info("\n".join(parrafos[:5]))
-
     st.divider()
 
     # Datos por cliente
