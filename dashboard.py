@@ -20,21 +20,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Auth ────────────────────────────────────────
-if "auth" in st.secrets:
-    # Google OAuth
-    ALLOWED_EMAILS = [e.strip() for e in st.secrets.get("allowed_emails", "").split(",") if e.strip()]
-    if not st.user.is_logged_in:
-        st.title("Dashboard SEO — La Fábrica del SEO")
-        st.button("Iniciar sesión con Google", on_click=st.login, args=("google",))
-        st.stop()
-    email = st.user.email or ""
-    if ALLOWED_EMAILS and email not in ALLOWED_EMAILS:
-        st.error(f"Acceso no autorizado para {email}.")
-        st.button("Cerrar sesión", on_click=st.logout)
-        st.stop()
-elif "password" in st.secrets:
-    # Contraseña simple (fallback)
+# ── Auth simple (fallback si no se usa Streamlit Cloud Sharing) ────────────────
+if "password" in st.secrets:
     pwd = st.text_input("Contraseña", type="password")
     if pwd != st.secrets["password"]:
         st.stop()
@@ -155,9 +142,6 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
     st.divider()
-    if "auth" in st.secrets:
-        st.caption(f"👤 {st.user.email}")
-        st.button("Cerrar sesión", on_click=st.logout, use_container_width=True)
     st.divider()
     st.caption("Cron: lunes 08:10 (Madrid)")
     st.caption(f"Bucket: `{BUCKET}`")
