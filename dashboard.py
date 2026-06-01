@@ -221,6 +221,39 @@ with tab_overview:
                   delta=int(n_criticos - n_criticos_ant) if n_criticos_ant is not None else None,
                   delta_color="inverse")
 
+    # KPIs de conversiones (si hay métricas)
+    if metricas and "clientes" in metricas:
+        total_conv = sum(
+            sum(d.get("key_events", {}).values())
+            for d in metricas["clientes"].values()
+        )
+        total_conv_prev = sum(
+            sum(d.get("key_events_prev", {}).values())
+            for d in metricas["clientes"].values()
+        )
+        total_rev = sum(d.get("revenue", 0) for d in metricas["clientes"].values())
+        total_rev_prev = sum(d.get("revenue_prev", 0) for d in metricas["clientes"].values())
+        clientes_sin_conv = sum(
+            1 for d in metricas["clientes"].values()
+            if sum(d.get("key_events", {}).values()) == 0 and d.get("ga4_ok")
+        )
+
+        st.divider()
+        st.markdown("##### Conversiones")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            delta_conv = int(total_conv - total_conv_prev) if total_conv_prev else None
+            st.metric("Total conversiones", total_conv, delta=delta_conv)
+        with c2:
+            if total_rev:
+                delta_rev = round(total_rev - total_rev_prev, 2) if total_rev_prev else None
+                st.metric("Revenue total (€)", f"{total_rev:,.0f} €", delta=f"{delta_rev:+.0f} €" if delta_rev is not None else None)
+            else:
+                st.metric("Revenue total (€)", "—")
+        with c3:
+            st.metric("Clientes sin conversiones", clientes_sin_conv,
+                      help="Clientes con GA4 OK pero 0 conversiones registradas esta semana")
+
     st.divider()
 
     # Barra horizontal de todos los clientes ordenados por score
@@ -276,6 +309,11 @@ with tab_clientes:
         }
         if tiene_metricas and cliente in metricas["clientes"]:
             d = metricas["clientes"][cliente]
+            conv = sum(d.get("key_events", {}).values())
+            conv_prev = sum(d.get("key_events_prev", {}).values())
+            fila["Conv."] = conv
+            fila["Δ Conv."] = pct(conv, conv_prev)
+            fila["Revenue"] = f"{d.get('revenue', 0):,.0f} €" if d.get("revenue") else "—"
             fila["Orgánico"] = d.get("organic_sessions", 0)
             fila["Δ Org."] = pct(d.get("organic_sessions", 0), d.get("organic_sessions_prev", 0))
             fila["GSC clics"] = d.get("gsc_clicks", 0)
@@ -299,7 +337,7 @@ with tab_clientes:
 
     cols_show = [" ", "Cliente", "Score", "Δ Score"]
     if tiene_metricas:
-        cols_show += ["Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA"]
+        cols_show += ["Conv.", "Δ Conv.", "Revenue", "Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA"]
 
     col_config = {
         "Score": st.column_config.ProgressColumn("Score", min_value=0, max_value=100, format="%d"),
