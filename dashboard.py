@@ -423,7 +423,7 @@ with tab_conv:
             "Conv. anterior": total_prev,
             "Tendencia": tend,
             "Revenue (€)": d.get("revenue", 0) or 0,
-            "Desglose": "  |  ".join(f"{k}: {v}" for k, v in ke.items()) if ke else "—",
+            "Desglose": ", ".join(ke.keys()) if ke else "—",
             "GA4": "✓" if d.get("ga4_ok") else "✗",
         })
 
