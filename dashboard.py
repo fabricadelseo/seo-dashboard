@@ -428,25 +428,40 @@ with tab_conv:
         nombres = ", ".join(sin_conv["Cliente"].tolist())
         st.warning(f"Clientes con GA4 activo pero sin conversiones esta semana: **{nombres}**")
 
-    # Gráfico barras: actual vs anterior
-    df_plot = df_conv[df_conv["Conversiones"] > 0].sort_values("Conversiones", ascending=True)
-    if not df_plot.empty:
+    # Gráfico barras apiladas por tipo de evento
+    # Recopilar todos los nombres de evento distintos
+    all_events = sorted({
+        ev
+        for d in clientes_data.values()
+        for ev in d.get("key_events", {}).keys()
+    })
+
+    clientes_con_conv = [c for c, d in clientes_data.items() if sum(d.get("key_events", {}).values()) > 0]
+    # Ordenar por total conversiones desc (invertido para barras horizontales)
+    clientes_con_conv.sort(key=lambda c: sum(clientes_data[c].get("key_events", {}).values()))
+
+    if clientes_con_conv and all_events:
         fig = go.Figure()
-        fig.add_trace(go.Bar(
-            y=df_plot["Cliente"], x=df_plot["Semana anterior"],
-            name="Semana anterior", orientation="h", marker_color="#94a3b8",
-        ))
-        fig.add_trace(go.Bar(
-            y=df_plot["Cliente"], x=df_plot["Conversiones"],
-            name="Esta semana", orientation="h", marker_color="#3b82f6",
-        ))
+        colores_ev = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444",
+                      "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#6366f1"]
+        for i, ev in enumerate(all_events):
+            valores = [clientes_data[c].get("key_events", {}).get(ev, 0) for c in clientes_con_conv]
+            fig.add_trace(go.Bar(
+                y=clientes_con_conv,
+                x=valores,
+                name=ev,
+                orientation="h",
+                marker_color=colores_ev[i % len(colores_ev)],
+                text=[str(v) if v > 0 else "" for v in valores],
+                textposition="inside",
+            ))
         fig.update_layout(
-            barmode="overlay",
-            height=max(300, len(df_plot) * 36),
+            barmode="stack",
+            height=max(300, len(clientes_con_conv) * 40),
             margin=dict(t=10, b=10, l=10, r=10),
             xaxis_title="Conversiones",
             yaxis_title="",
-            legend=dict(orientation="h", y=1.05),
+            legend=dict(orientation="h", y=1.08),
         )
         st.plotly_chart(fig, use_container_width=True)
 
