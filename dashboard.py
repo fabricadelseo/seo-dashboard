@@ -481,20 +481,23 @@ with tab_conv:
                 out.append("")
         return out
 
-    df_tbl = df_conv[["Cliente", "Conversiones", "Semana anterior", "Δ", "Revenue (€)", "Eventos", "GA4"]]
+    hay_revenue = df_conv["Revenue (€)"].gt(0).any()
+    cols_tbl = ["Cliente", "Conversiones", "Semana anterior", "Δ", "Eventos", "GA4"]
+    if hay_revenue:
+        cols_tbl.insert(4, "Revenue (€)")
+
+    col_cfg = {
+        "Conversiones": st.column_config.NumberColumn("Conv. esta semana"),
+        "Semana anterior": st.column_config.NumberColumn("Semana anterior"),
+        "Δ": st.column_config.NumberColumn("Δ %", format="%+.1f%%"),
+        "Eventos": st.column_config.TextColumn("Desglose eventos", width="large"),
+    }
+    if hay_revenue:
+        col_cfg["Revenue (€)"] = st.column_config.NumberColumn("Revenue (€)", format="%.0f €")
+
+    df_tbl = df_conv[cols_tbl]
     styled_conv = df_tbl.style.apply(_color_conv_delta, subset=["Δ"])
-    st.dataframe(
-        styled_conv,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Conversiones": st.column_config.NumberColumn("Conv. esta semana"),
-            "Semana anterior": st.column_config.NumberColumn("Semana anterior"),
-            "Δ": st.column_config.NumberColumn("Δ %", format="%+.1f%%"),
-            "Revenue (€)": st.column_config.NumberColumn("Revenue (€)", format="%.0f €"),
-            "Eventos": st.column_config.TextColumn("Desglose eventos", width="large"),
-        },
-    )
+    st.dataframe(styled_conv, use_container_width=True, hide_index=True, column_config=col_cfg)
 
 
 # ──────────── EVOLUCIÓN ────────────
