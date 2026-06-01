@@ -492,6 +492,7 @@ with tab_conv:
             "Semana anterior": st.column_config.NumberColumn("Semana anterior"),
             "Δ": st.column_config.NumberColumn("Δ %", format="%+.1f%%"),
             "Revenue (€)": st.column_config.NumberColumn("Revenue (€)", format="%.0f €"),
+            "Eventos": st.column_config.TextColumn("Desglose eventos", width="large"),
         },
     )
 
