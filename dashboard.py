@@ -20,11 +20,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Auth simple (fallback si no se usa Streamlit Cloud Sharing) ────────────────
-if "password" in st.secrets:
-    pwd = st.text_input("Contraseña", type="password")
-    if pwd != st.secrets["password"]:
-        st.stop()
+# ── Auth simple (DESACTIVADA temporalmente — reactivar cuando la herramienta esté lista) ──
+# if "password" in st.secrets:
+#     pwd = st.text_input("Contraseña", type="password")
+#     if pwd != st.secrets["password"]:
+#         st.stop()
 
 
 # ──────────────────────────────────────────────
@@ -121,6 +121,30 @@ def pct(curr, prev):
         return None
     return round((curr - prev) / prev * 100, 1)
 
+def org_pct_cliente(metricas, cliente):
+    """% de variación de sesiones orgánicas de un cliente, o None."""
+    if not metricas or "clientes" not in metricas:
+        return None
+    d = metricas["clientes"].get(cliente)
+    if not d:
+        return None
+    return pct(d.get("organic_sessions", 0), d.get("organic_sessions_prev", 0))
+
+def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
+    """Tarjeta-destacado para la portada del Resumen."""
+    cuerpo = "".join(
+        f'<div style="font-size:0.85rem;color:#475569;margin-top:3px">{l}</div>'
+        for l in lineas
+    )
+    return (
+        f'<div style="background:{fondo};border-left:5px solid {borde};'
+        f'border-radius:10px;padding:16px 18px;min-height:140px">'
+        f'<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.5px;'
+        f'color:{borde};font-weight:700">{etiqueta}</div>'
+        f'<div style="font-size:1.2rem;font-weight:700;color:#0f172a;margin-top:6px">{nombre}</div>'
+        f'{cuerpo}</div>'
+    )
+
 
 # ──────────────────────────────────────────────
 # Sidebar
@@ -196,31 +220,81 @@ with tab_overview:
 
     st.divider()
 
-    # KPIs con delta
+    # ── Portada escaneable: 3 destacados de la semana ──────────────
     n_sanos = sum(1 for s in scores.values() if s >= 80)
     n_atencion = sum(1 for s in scores.values() if 50 <= s < 80)
     n_criticos = sum(1 for s in scores.values() if s < 50)
 
-    n_sanos_ant = sum(1 for s in scores_ant.values() if s >= 80) if scores_ant else None
-    n_atencion_ant = sum(1 for s in scores_ant.values() if 50 <= s < 80) if scores_ant else None
-    n_criticos_ant = sum(1 for s in scores_ant.values() if s < 50) if scores_ant else None
+    # Destacados automáticos
+    peor_cliente = min(scores, key=scores.get) if scores else None
+    deltas_validos = {
+        c: delta_score(scores[c], scores_ant.get(c))
+        for c in scores
+        if delta_score(scores[c], scores_ant.get(c)) is not None
+    }
+    candidatos_mejor = {c: d for c, d in deltas_validos.items() if c != peor_cliente}
+    if candidatos_mejor:
+        mejor_cliente = max(candidatos_mejor, key=candidatos_mejor.get)
+    elif scores:
+        mejor_cliente = max(
+            (c for c in scores if c != peor_cliente), key=scores.get, default=peor_cliente
+        )
+    else:
+        mejor_cliente = None
 
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Total clientes", len(scores))
-    with col2:
-        st.metric("Sanos (≥80)", n_sanos,
-                  delta=int(n_sanos - n_sanos_ant) if n_sanos_ant is not None else None)
-    with col3:
-        st.metric("Atención (50-79)", n_atencion,
-                  delta=int(n_atencion - n_atencion_ant) if n_atencion_ant is not None else None,
-                  delta_color="inverse")
-    with col4:
-        st.metric("Críticos (<50)", n_criticos,
-                  delta=int(n_criticos - n_criticos_ant) if n_criticos_ant is not None else None,
-                  delta_color="inverse")
+    col_a, col_b, col_c = st.columns([1.1, 1, 1.1])
 
-    # KPIs de conversiones (si hay métricas)
+    # Necesita atención (peor score)
+    with col_a:
+        if peor_cliente:
+            ps = scores[peor_cliente]
+            pdl = delta_score(ps, scores_ant.get(peor_cliente))
+            po = org_pct_cliente(metricas, peor_cliente)
+            lineas = [f"Score <b>{ps}</b> · {estado_score(ps)}"]
+            if pdl is not None:
+                lineas.append(f"{'▼' if pdl < 0 else '▲'} {pdl:+d} pts vs semana anterior")
+            if po is not None:
+                lineas.append(f"Tráfico orgánico {po:+.1f}%")
+            st.markdown(
+                tarjeta_html("#fef2f2", "#ef4444", "⚠️ Necesita atención", peor_cliente, lineas),
+                unsafe_allow_html=True,
+            )
+
+    # Salud de la cartera (donut)
+    with col_b:
+        fig_d = go.Figure(go.Pie(
+            values=[n_sanos, n_atencion, n_criticos],
+            labels=["Sanos", "Atención", "Críticos"],
+            marker_colors=["#22c55e", "#eab308", "#ef4444"],
+            hole=0.62, sort=False, textinfo="value",
+            hovertemplate="%{label}: %{value}<extra></extra>",
+        ))
+        fig_d.update_layout(
+            height=190, showlegend=False,
+            margin=dict(t=34, b=0, l=0, r=0),
+            annotations=[dict(text=f"<b>{len(scores)}</b><br>clientes", x=0.5, y=0.5,
+                              font_size=15, showarrow=False)],
+            title=dict(text="Salud de la cartera", x=0.0, y=0.98, font=dict(size=14)),
+        )
+        st.plotly_chart(fig_d, use_container_width=True, config={"displayModeBar": False})
+
+    # Mejor evolución (mayor Δ score)
+    with col_c:
+        if mejor_cliente:
+            ms = scores[mejor_cliente]
+            mdl = delta_score(ms, scores_ant.get(mejor_cliente))
+            mo = org_pct_cliente(metricas, mejor_cliente)
+            lineas = [f"Score <b>{ms}</b> · {estado_score(ms)}"]
+            if mdl is not None:
+                lineas.append(f"{'▲' if mdl >= 0 else '▼'} {mdl:+d} pts vs semana anterior")
+            if mo is not None:
+                lineas.append(f"Tráfico orgánico {mo:+.1f}%")
+            st.markdown(
+                tarjeta_html("#f0fdf4", "#22c55e", "🚀 Mejor evolución", mejor_cliente, lineas),
+                unsafe_allow_html=True,
+            )
+
+    # Tira compacta de conversiones (si hay métricas)
     if metricas and "clientes" in metricas:
         total_conv = sum(
             sum(d.get("key_events", {}).values())
@@ -238,24 +312,25 @@ with tab_overview:
         )
 
         st.divider()
-        st.markdown("##### Conversiones")
         c1, c2, c3 = st.columns(3)
         with c1:
             delta_conv = int(total_conv - total_conv_prev) if total_conv_prev else None
-            st.metric("Total conversiones", total_conv, delta=delta_conv)
+            st.metric("Conversiones (total)", total_conv, delta=delta_conv)
         with c2:
             if total_rev:
                 delta_rev = round(total_rev - total_rev_prev, 2) if total_rev_prev else None
-                st.metric("Revenue total (€)", f"{total_rev:,.0f} €", delta=f"{delta_rev:+.0f} €" if delta_rev is not None else None)
+                st.metric("Revenue total", f"{total_rev:,.0f} €",
+                          delta=f"{delta_rev:+.0f} €" if delta_rev is not None else None)
             else:
-                st.metric("Revenue total (€)", "—")
+                st.metric("Revenue total", "—")
         with c3:
             st.metric("Clientes sin conversiones", clientes_sin_conv,
+                      delta_color="inverse",
                       help="Clientes con GA4 OK pero 0 conversiones registradas esta semana")
 
     st.divider()
 
-    # Barra horizontal de todos los clientes ordenados por score
+    # Ranking visual de clientes por score
     if scores:
         df_scores = pd.DataFrame([{"Cliente": k, "Score": v} for k, v in scores.items()])
         df_scores = df_scores.sort_values("Score", ascending=True)
@@ -274,13 +349,13 @@ with tab_overview:
         fig.add_vline(x=80, line_dash="dash", line_color="#22c55e", opacity=0.4, annotation_text="80")
         fig.add_vline(x=50, line_dash="dash", line_color="#ef4444", opacity=0.4, annotation_text="50")
         fig.update_layout(
-            height=max(400, len(df_scores) * 22),
+            height=max(300, len(df_scores) * 46),
             xaxis=dict(range=[0, 110], title="Score"),
             yaxis_title="",
             margin=dict(t=10, b=20, l=10, r=60),
             showlegend=False,
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
 # ──────────── CLIENTES ────────────
