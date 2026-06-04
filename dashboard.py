@@ -624,7 +624,17 @@ with tab_clientes:
             fila["GSC clics"] = d.get("gsc_clicks", 0)
             fila["Δ GSC"] = pct(d.get("gsc_clicks", 0), d.get("gsc_clicks_prev", 0))
             fila["IA"] = sum(d.get("llm", {}).values())
-            fila["KW"] = len(d.get("keywords", []))
+            kws = d.get("keywords", [])
+            fila["KW"] = len(kws)
+            sube = baja = 0
+            for k in kws:
+                pc, pp = k.get("pos_curr"), k.get("pos_prev")
+                if isinstance(pc, (int, float)) and isinstance(pp, (int, float)):
+                    if pc < pp:
+                        sube += 1
+                    elif pc > pp:
+                        baja += 1
+            fila["Avance"] = f"▲{sube} ▼{baja}" if kws else "—"
         filas.append(fila)
 
     df = pd.DataFrame(filas).sort_values("Score", ascending=False)
@@ -643,7 +653,7 @@ with tab_clientes:
 
     cols_show = [" ", "Cliente"]
     if tiene_metricas:
-        cols_show += ["Conv.", "Δ Conv.", "Revenue", "Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA", "KW"]
+        cols_show += ["Conv.", "Δ Conv.", "Revenue", "Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA", "KW", "Avance"]
 
     col_config = {
         "Score": st.column_config.ProgressColumn("Score", min_value=0, max_value=100, format="%d"),
@@ -656,6 +666,7 @@ with tab_clientes:
         "Δ GSC": st.column_config.NumberColumn("Δ GSC", format="%+.1f%%"),
         "IA": st.column_config.NumberColumn("IA"),
         "KW": st.column_config.NumberColumn("KW", help="Nº de keywords en Ahrefs (top por tráfico)"),
+        "Avance": st.column_config.TextColumn("Avance", help="Keywords que suben (▲) vs bajan (▼) de posición vs semana anterior"),
     }
 
     delta_cols = [c for c in cols_show if c.startswith("Δ") and c != "Δ Score"]
