@@ -448,8 +448,9 @@ with tab_overview:
                 lineas.append(f"{'▼' if pdl < 0 else '▲'} {pdl:+d} pts vs semana anterior")
             if po is not None:
                 lineas.append(f"Tráfico orgánico {po:+.1f}%")
+            nombre_a = f"{peor_cliente} {badge_consultor_html(consultor(peor_cliente))}"
             st.markdown(
-                tarjeta_html("#fef2f2", "#ef4444", "⚠️ Necesita atención", peor_cliente, lineas),
+                tarjeta_html("#fef2f2", "#ef4444", "⚠️ Necesita atención", nombre_a, lineas),
                 unsafe_allow_html=True,
             )
 
@@ -482,8 +483,9 @@ with tab_overview:
                 lineas.append(f"{'▲' if mdl >= 0 else '▼'} {mdl:+d} pts vs semana anterior")
             if mo is not None:
                 lineas.append(f"Tráfico orgánico {mo:+.1f}%")
+            nombre_c = f"{mejor_cliente} {badge_consultor_html(consultor(mejor_cliente))}"
             st.markdown(
-                tarjeta_html("#f0fdf4", "#22c55e", "🚀 Mejor evolución", mejor_cliente, lineas),
+                tarjeta_html("#f0fdf4", "#22c55e", "🚀 Mejor evolución", nombre_c, lineas),
                 unsafe_allow_html=True,
             )
 
