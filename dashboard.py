@@ -246,7 +246,7 @@ with tab_overview:
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
         '<span style="font-size:1.05rem">📋</span>'
         '<span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.6px;'
-        'color:#2563eb;font-weight:700">Tareas que añadir a Asana</span>'
+        'color:#2563eb;font-weight:700">Tareas que añadir a Asana esta semana</span>'
         f'<span style="font-size:0.74rem;color:#94a3b8;margin-left:auto">{fecha_fmt}</span>'
         '</div>'
         f'{cuerpo}'
