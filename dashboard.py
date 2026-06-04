@@ -18,7 +18,7 @@ st.set_page_config(
     page_title="Dashboard SEO — La Fábrica del SEO",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ── Auth simple (DESACTIVADA temporalmente — reactivar cuando la herramienta esté lista) ──
@@ -218,13 +218,15 @@ def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
 
 
 # ──────────────────────────────────────────────
-# Sidebar
+# Cabecera (barra superior, sin sidebar)
 # ──────────────────────────────────────────────
 
-with st.sidebar:
+head_l, head_c, head_r = st.columns([3, 2, 1])
+with head_l:
     st.title("Dashboard SEO")
     st.caption("La Fábrica del SEO")
-    informes = listar_informes()
+informes = listar_informes()
+with head_c:
     if informes:
         fecha_sel = st.selectbox(
             "Semana del informe", informes, index=0,
@@ -233,13 +235,12 @@ with st.sidebar:
     else:
         fecha_sel = None
         st.warning("Aún no hay informes en el bucket.")
-    if st.button("Refrescar datos", use_container_width=True):
+with head_r:
+    st.write("")
+    st.write("")
+    if st.button("🔄 Refrescar", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
-    st.divider()
-    st.divider()
-    st.caption("Cron: lunes 08:10 (Madrid)")
-    st.caption(f"Bucket: `{BUCKET}`")
 
 
 # ──────────────────────────────────────────────
@@ -275,7 +276,7 @@ tab_overview, tab_clientes, tab_conv, tab_evolucion, tab_alertas, tab_informe = 
 # ──────────── RESUMEN ────────────
 with tab_overview:
     if not informe:
-        st.info("Selecciona una semana en el sidebar.")
+        st.info("Selecciona una semana arriba.")
         st.stop()
 
     scores = informe.get("scores", {})
@@ -498,7 +499,7 @@ with tab_overview:
 # ──────────── CLIENTES ────────────
 with tab_clientes:
     if not informe:
-        st.info("Selecciona una semana en el sidebar.")
+        st.info("Selecciona una semana arriba.")
         st.stop()
 
     scores = informe.get("scores", {})
@@ -736,7 +737,7 @@ with tab_evolucion:
 # ──────────── ALERTAS ────────────
 with tab_alertas:
     if not informe:
-        st.info("Selecciona una semana en el sidebar.")
+        st.info("Selecciona una semana arriba.")
         st.stop()
 
     secciones = informe.get("secciones", {})
@@ -759,7 +760,7 @@ with tab_alertas:
 # ──────────── INFORME ────────────
 with tab_informe:
     if not informe:
-        st.info("Selecciona una semana en el sidebar.")
+        st.info("Selecciona una semana arriba.")
         st.stop()
 
     st.markdown(informe.get("analisis", ""))
@@ -781,3 +782,8 @@ with tab_informe:
                     continue
                 with st.expander(f"{m.get('recurso', 'Sin nombre')} — {m.get('tipo', '')} ({m.get('fecha', '')})"):
                     st.text(m.get("texto", ""))
+
+
+# ──────────── Pie ────────────
+st.divider()
+st.caption(f"Cron: lunes 08:10 (Madrid) · Bucket: `{BUCKET}`")
