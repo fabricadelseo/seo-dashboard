@@ -607,11 +607,10 @@ with tab_clientes:
         grupos.append("Sin asignar")
 
     if hay_consultores and len(grupos) > 1:
-        for col, g in zip(st.columns(len(grupos)), grupos):
-            with col:
-                df_g = df[df["Consultor"] == g]
-                st.markdown(f"**{g}** · {len(df_g)} clientes")
-                render_tabla_clientes(df_g)
+        for g in grupos:  # una tabla debajo de la otra
+            df_g = df[df["Consultor"] == g]
+            st.markdown(f"**{g}** · {len(df_g)} clientes")
+            render_tabla_clientes(df_g)
     elif hay_consultores and grupos:
         st.markdown(f"**{grupos[0]}** · {len(df)} clientes")
         render_tabla_clientes(df)
