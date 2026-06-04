@@ -535,15 +535,8 @@ with tab_clientes:
 
     df = pd.DataFrame(filas).sort_values("Score", ascending=False)
 
-    # Filtros
-    if hay_consultores:
-        col1, col2, col3 = st.columns([2, 1, 1])
-        with col3:
-            opciones_cons = ["Todos"] + sorted(df["Consultor"].unique())
-            cons_sel = st.selectbox("Consultor", opciones_cons, index=0)
-    else:
-        col1, col2 = st.columns([3, 1])
-        cons_sel = "Todos"
+    # Filtros (la separación por consultor va en columnas, no en filtro)
+    col1, col2 = st.columns([3, 1])
     with col1:
         busca = st.text_input("Buscar cliente", "", placeholder="Nombre...")
     with col2:
@@ -553,12 +546,8 @@ with tab_clientes:
         df = df[df["Cliente"].str.contains(busca, case=False, na=False)]
     if estados:
         df = df[df["Estado"].isin(estados)]
-    if cons_sel != "Todos":
-        df = df[df["Consultor"] == cons_sel]
 
     cols_show = [" ", "Cliente"]
-    if hay_consultores:
-        cols_show.append("Consultor")
     if tiene_metricas:
         cols_show += ["Conv.", "Δ Conv.", "Revenue", "Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA"]
 
@@ -589,14 +578,28 @@ with tab_clientes:
                 out.append("")
         return out
 
-    df_show = df[cols_show]
-    if delta_cols:
-        styled = df_show.style.apply(_color_delta, subset=delta_cols)
-    else:
-        styled = df_show.style
+    def render_tabla_clientes(df_sub):
+        df_show = df_sub[cols_show]
+        styled = df_show.style.apply(_color_delta, subset=delta_cols) if delta_cols else df_show.style
+        st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_config)
 
-    st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_config)
-    st.caption(f"Mostrando {len(df)} de {len(scores)} clientes")
+    # Grupos por consultor (con nombre primero, "Sin asignar" al final)
+    grupos = sorted(g for g in df["Consultor"].unique() if g != "Sin asignar")
+    if (df["Consultor"] == "Sin asignar").any():
+        grupos.append("Sin asignar")
+
+    if hay_consultores and len(grupos) > 1:
+        for col, g in zip(st.columns(len(grupos)), grupos):
+            with col:
+                df_g = df[df["Consultor"] == g]
+                st.markdown(f"**{g}** · {len(df_g)} clientes")
+                render_tabla_clientes(df_g)
+    elif hay_consultores and grupos:
+        st.markdown(f"**{grupos[0]}** · {len(df)} clientes")
+        render_tabla_clientes(df)
+    else:
+        render_tabla_clientes(df)
+        st.caption(f"Mostrando {len(df)} de {len(scores)} clientes")
 
 
 # ──────────── CONVERSIONES ────────────
@@ -631,25 +634,14 @@ with tab_conv:
 
     df_conv = pd.DataFrame(rows_conv).sort_values("Conv. actual", ascending=False)
 
-    # Filtro por consultor
-    if hay_consultores:
-        opciones_cons = ["Todos"] + sorted(df_conv["Consultor"].unique())
-        cons_sel = st.selectbox("Consultor", opciones_cons, index=0, key="conv_consultor")
-        if cons_sel != "Todos":
-            df_conv = df_conv[df_conv["Consultor"] == cons_sel]
-
     # Aviso: clientes que normalmente tienen conversiones pero esta semana tienen 0
     sin_conv = df_conv[(df_conv["Conv. actual"] == 0) & (df_conv["Conv. anterior"] > 0)]
     if not sin_conv.empty:
         for _, row in sin_conv.iterrows():
             st.warning(f"⚠️ **{row['Cliente']}** no tiene conversiones esta semana, pero la semana anterior tuvo {int(row['Conv. anterior'])}.")
 
-
-
     hay_revenue = df_conv["Revenue (€)"].gt(0).any()
     cols_tbl = ["Cliente", "Conv. actual", "Conv. anterior", "Δ %", "Desglose"]
-    if hay_consultores:
-        cols_tbl.insert(1, "Consultor")
     if hay_revenue:
         cols_tbl.insert(cols_tbl.index("Δ %") + 1, "Revenue (€)")
 
@@ -669,8 +661,25 @@ with tab_conv:
             for v in series
         ]
 
-    styled = df_conv[cols_tbl].style.apply(_color_delta, subset=["Δ %"])
-    st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_cfg)
+    def render_tabla_conv(df_sub):
+        styled = df_sub[cols_tbl].style.apply(_color_delta, subset=["Δ %"])
+        st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_cfg)
+
+    grupos = sorted(g for g in df_conv["Consultor"].unique() if g != "Sin asignar")
+    if (df_conv["Consultor"] == "Sin asignar").any():
+        grupos.append("Sin asignar")
+
+    if hay_consultores and len(grupos) > 1:
+        for col, g in zip(st.columns(len(grupos)), grupos):
+            with col:
+                df_g = df_conv[df_conv["Consultor"] == g]
+                st.markdown(f"**{g}** · {len(df_g)} clientes")
+                render_tabla_conv(df_g)
+    elif hay_consultores and grupos:
+        st.markdown(f"**{grupos[0]}** · {len(df_conv)} clientes")
+        render_tabla_conv(df_conv)
+    else:
+        render_tabla_conv(df_conv)
 
 
 # ──────────── EVOLUCIÓN ────────────
