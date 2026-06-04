@@ -706,40 +706,6 @@ with tab_clientes:
         render_tabla_clientes(df)
         st.caption(f"Mostrando {len(df)} de {len(scores)} clientes")
 
-    # Keywords Ahrefs por cliente
-    if tiene_metricas:
-        st.divider()
-        st.markdown("##### 🔑 Keywords (Ahrefs)")
-        clientes_con_kw = [c for c, d in metricas["clientes"].items() if d.get("keywords")]
-        if not clientes_con_kw:
-            st.info("Sin datos de keywords esta semana. Se poblará con los datos reales del agente (lunes).")
-        else:
-            sel_kw = st.selectbox("Cliente", sorted(clientes_con_kw), key="kw_cliente")
-            rows_kw = []
-            for k in metricas["clientes"][sel_kw].get("keywords", []):
-                pc, pp = k.get("pos_curr"), k.get("pos_prev")
-                d_pos = pp - pc if isinstance(pc, (int, float)) and isinstance(pp, (int, float)) else None
-                rows_kw.append({
-                    "Keyword": k.get("keyword", ""),
-                    "Pos. actual": pc,
-                    "Pos. anterior": pp,
-                    "Δ": d_pos,
-                })
-            df_kw = pd.DataFrame(rows_kw)
-
-            def _color_pos(series):
-                return ["color:#22c55e;font-weight:600" if (v is not None and v > 0)
-                        else "color:#ef4444;font-weight:600" if (v is not None and v < 0)
-                        else "" for v in series]
-
-            st.dataframe(
-                df_kw.style.apply(_color_pos, subset=["Δ"]),
-                use_container_width=True, hide_index=True,
-                column_config={"Δ": st.column_config.NumberColumn(
-                    "Δ posición", format="%+d", help="Positivo = sube en el ranking (mejor)")},
-            )
-            st.caption("Δ positivo = la keyword sube posiciones (mejor). Top 10 por tráfico orgánico.")
-
 
 # ──────────── CONVERSIONES ────────────
 with tab_conv:
