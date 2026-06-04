@@ -666,7 +666,7 @@ with tab_clientes:
         "Δ GSC": st.column_config.NumberColumn("Δ GSC", format="%+.1f%%"),
         "IA": st.column_config.NumberColumn("IA"),
         "KW": st.column_config.NumberColumn("KW", help="Nº de keywords en Ahrefs (top por tráfico)"),
-        "Avance": st.column_config.TextColumn("Avance", help="Keywords que suben (▲) vs bajan (▼) de posición vs semana anterior"),
+        "Avance": st.column_config.TextColumn("KW vs semana", help="Keywords que suben (▲) vs bajan (▼) de posición respecto a la semana anterior"),
     }
 
     delta_cols = [c for c in cols_show if c.startswith("Δ") and c != "Δ Score"]
