@@ -206,40 +206,53 @@ with tab_overview:
     idx_actual = fechas_hist.index(informe["fecha"]) if informe["fecha"] in fechas_hist else len(fechas_hist) - 1
     scores_ant = historico[fechas_hist[idx_actual - 1]] if idx_actual > 0 else {}
 
-    # Conclusión de Claude arriba — titular de la semana
-    secciones = informe.get("secciones", {})
-    resumen_claude = next(
-        (v for k, v in secciones.items() if any(w in k.upper() for w in ("RESUMEN", "CONCLUSI", "INSIGHT"))),
-        None,
-    )
-    texto_resumen = resumen_claude
-    if not texto_resumen and informe.get("analisis"):
-        texto_resumen = informe["analisis"][:800].strip()
-        if len(informe["analisis"]) > 800:
-            texto_resumen += "…"
+    # Tareas accionables para Asana — clientes que necesitan revisión
+    tareas = []
+    for c in sorted(scores, key=scores.get):  # peor score primero
+        s = scores[c]
+        dl = delta_score(s, scores_ant.get(c))
+        motivos = []
+        if s < 50:
+            motivos.append("crítico")
+        if dl is not None and dl < 0:
+            motivos.append(f"{dl:+d} pts")
+        if metricas and "clientes" in metricas:
+            d = metricas["clientes"].get(c)
+            if d and d.get("ga4_ok") and sum(d.get("key_events", {}).values()) == 0:
+                motivos.append("0 conversiones")
+        if motivos:
+            tareas.append((c, motivos))
 
-    if texto_resumen:
-        try:
-            fecha_fmt = datetime.strptime(informe["fecha"], "%Y-%m-%d").strftime("%d %b %Y")
-        except Exception:
-            fecha_fmt = informe.get("fecha", "")
-        # Markdown → HTML básico (negritas y saltos) para poder estilar la tarjeta
-        cuerpo = re.sub(r"\*\*(.+?)\*\*", r'<strong style="color:#0f172a">\1</strong>', texto_resumen)
-        cuerpo = cuerpo.replace("\n", "<br>")
-        st.markdown(
-            '<div style="background:linear-gradient(180deg,#f8fafc,#eef2ff);'
-            'border:1px solid #e2e8f0;border-left:5px solid #2563eb;border-radius:12px;'
-            'padding:18px 22px;margin-bottom:4px">'
-            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-            '<span style="font-size:1.05rem">📌</span>'
-            '<span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.6px;'
-            'color:#2563eb;font-weight:700">Resumen de la semana</span>'
-            f'<span style="font-size:0.74rem;color:#94a3b8;margin-left:auto">{fecha_fmt}</span>'
-            '</div>'
-            f'<div style="font-size:1.02rem;line-height:1.65;color:#334155">{cuerpo}</div>'
-            '</div>',
-            unsafe_allow_html=True,
+    try:
+        fecha_fmt = datetime.strptime(informe["fecha"], "%Y-%m-%d").strftime("%d %b %Y")
+    except Exception:
+        fecha_fmt = informe.get("fecha", "")
+
+    if tareas:
+        items = "".join(
+            f'<li style="margin-bottom:8px;line-height:1.5">Revisar '
+            f'<strong style="color:#0f172a">{c}</strong>'
+            f'<span style="color:#94a3b8;font-size:0.9rem"> — {", ".join(m)}</span></li>'
+            for c, m in tareas
         )
+        cuerpo = f'<ul style="margin:0;padding-left:20px;color:#334155;font-size:1.0rem">{items}</ul>'
+    else:
+        cuerpo = '<div style="color:#16a34a;font-size:1.0rem">✓ Sin tareas pendientes esta semana</div>'
+
+    st.markdown(
+        '<div style="background:linear-gradient(180deg,#f8fafc,#eef2ff);'
+        'border:1px solid #e2e8f0;border-left:5px solid #2563eb;border-radius:12px;'
+        'padding:18px 22px;margin-bottom:4px">'
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+        '<span style="font-size:1.05rem">📋</span>'
+        '<span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.6px;'
+        'color:#2563eb;font-weight:700">Tareas que añadir a Asana</span>'
+        f'<span style="font-size:0.74rem;color:#94a3b8;margin-left:auto">{fecha_fmt}</span>'
+        '</div>'
+        f'{cuerpo}'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
     st.divider()
 
