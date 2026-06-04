@@ -290,42 +290,35 @@ def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
 st.markdown("""
 <style>
 :root { --brand:#ff6600; }
-.stApp { background:#f7f7f8; }
-.block-container { padding-top:1.4rem; max-width:1320px; }
+.stApp { background:#ffffff; }
+.block-container { padding-top:1.6rem; max-width:1280px; }
 header[data-testid="stHeader"] { background:transparent; }
 
-/* Hero / banner de marca */
-.saas-hero{
-  background:linear-gradient(120deg,#ff8a1e 0%,#ff6600 55%,#ed4e00 100%);
-  border-radius:18px; padding:20px 26px; color:#fff;
-  box-shadow:0 12px 30px rgba(255,102,0,.28);
-  display:flex; align-items:center; gap:14px;
-}
-.saas-hero .logo{ font-size:2rem; line-height:1; }
-.saas-hero h1{ color:#fff!important; font-size:1.8rem; font-weight:800; margin:0; letter-spacing:-.6px; }
-.saas-hero p{ color:rgba(255,255,255,.9); margin:3px 0 0; font-size:.88rem; }
+/* Cabecera minimal */
+.mini-head h1{ font-size:2rem; font-weight:800; color:#111827; margin:0; letter-spacing:-.7px; }
+.mini-head .accent{ width:48px; height:4px; background:var(--brand); border-radius:4px; margin:9px 0 5px; }
+.mini-head p{ color:#6b7280; margin:0; font-size:.9rem; }
 
-/* Tabs como nav SaaS */
-.stTabs [data-baseweb="tab-list"]{ gap:6px; border-bottom:1px solid #e6e8ee; }
-.stTabs [data-baseweb="tab"]{ height:42px; padding:0 16px; border-radius:10px 10px 0 0; font-weight:600; color:#64748b; }
-.stTabs [aria-selected="true"]{ color:var(--brand); background:#fff3e9; }
-.stTabs [data-baseweb="tab-highlight"]{ background:var(--brand); }
+/* Tabs minimal con subrayado */
+.stTabs [data-baseweb="tab-list"]{ gap:26px; border-bottom:1px solid #ececf0; }
+.stTabs [data-baseweb="tab"]{ height:40px; padding:0 2px; font-weight:600; color:#9ca3af; background:transparent; }
+.stTabs [aria-selected="true"]{ color:#111827; background:transparent; }
+.stTabs [data-baseweb="tab-highlight"]{ background:var(--brand); height:2px; }
 
 /* Botones */
-.stButton>button{ border-radius:10px; font-weight:600; border:1px solid #e5e7eb; transition:.15s; }
+.stButton>button{ border-radius:8px; font-weight:600; border:1px solid #e5e7eb; transition:.15s; }
 .stButton>button:hover{ border-color:var(--brand); color:var(--brand); }
 
 /* Inputs / selects */
-[data-baseweb="select"]>div{ border-radius:10px; }
+[data-baseweb="select"]>div{ border-radius:8px; }
 
-/* Métricas como tarjetas */
+/* Métricas como tarjetas sutiles */
 [data-testid="stMetric"]{
-  background:#fff; border:1px solid #eceef2; border-radius:14px;
-  padding:14px 16px; box-shadow:0 1px 2px rgba(16,24,40,.05);
+  background:#fff; border:1px solid #f0f0f3; border-radius:12px; padding:12px 14px;
 }
 
 /* Dataframe redondeado */
-[data-testid="stDataFrame"]{ border-radius:12px; overflow:hidden; }
+[data-testid="stDataFrame"]{ border-radius:10px; overflow:hidden; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -338,9 +331,9 @@ informes = listar_informes()
 hero_col, sel_col, btn_col = st.columns([3.4, 1.5, 1])
 with hero_col:
     st.markdown(
-        '<div class="saas-hero"><div class="logo">📈</div>'
-        '<div><h1>Progress 3.0</h1>'
-        '<p>La Fábrica del SEO · Panel SEO semanal</p></div></div>',
+        '<div class="mini-head"><h1>Progress 3.0</h1>'
+        '<div class="accent"></div>'
+        '<p>La Fábrica del SEO · Panel SEO semanal</p></div>',
         unsafe_allow_html=True,
     )
 with sel_col:
