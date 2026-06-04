@@ -293,19 +293,27 @@ with tab_overview:
             if d and d.get("ga4_ok") and sum(d.get("key_events", {}).values()) == 0:
                 motivos.append("0 conversiones")
         if motivos:
-            tareas.append((c, motivos))
+            tareas.append((c, motivos, consultor(c)))
 
     try:
         fecha_fmt = datetime.strptime(informe["fecha"], "%Y-%m-%d").strftime("%d %b %Y")
     except Exception:
         fecha_fmt = informe.get("fecha", "")
 
+    def _badge_consultor(cons):
+        if not cons or cons == "Sin asignar":
+            return ('<span style="background:#f1f5f9;color:#64748b;border-radius:6px;'
+                    'padding:1px 8px;font-size:0.78rem;font-weight:600;margin-left:8px">👤 Sin asignar</span>')
+        return ('<span style="background:#e0e7ff;color:#3730a3;border-radius:6px;'
+                f'padding:1px 8px;font-size:0.78rem;font-weight:600;margin-left:8px">👤 {cons}</span>')
+
     if tareas:
         items = "".join(
-            f'<li style="margin-bottom:8px;line-height:1.5">Revisar '
+            f'<li style="margin-bottom:8px;line-height:1.6">Revisar '
             f'<strong style="color:#0f172a">{c}</strong>'
-            f'<span style="color:#94a3b8;font-size:0.9rem"> — {", ".join(m)}</span></li>'
-            for c, m in tareas
+            f'<span style="color:#94a3b8;font-size:0.9rem"> — {", ".join(m)}</span>'
+            f'{_badge_consultor(cons)}</li>'
+            for c, m, cons in tareas
         )
         cuerpo = f'<ul style="margin:0;padding-left:20px;color:#334155;font-size:1.0rem">{items}</ul>'
     else:
