@@ -193,6 +193,25 @@ def html_score_cards(clientes, scores, scores_ant):
     cs = sorted(clientes, key=lambda c: scores[c], reverse=True)
     return "".join(tarjeta_score_html(c, scores[c], scores_ant.get(c)) for c in cs)
 
+def html_stats_consultor(clientes, scores):
+    """Línea-resumen de un consultor: score medio, nº críticos y en atención."""
+    vals = [scores[c] for c in clientes if c in scores]
+    if not vals:
+        return ""
+    medio = round(sum(vals) / len(vals))
+    crit = sum(1 for v in vals if v < 50)
+    aten = sum(1 for v in vals if 50 <= v < 80)
+    sanos = sum(1 for v in vals if v >= 80)
+    color = "#ef4444" if medio < 50 else ("#eab308" if medio < 80 else "#22c55e")
+    return (
+        '<div style="font-size:0.85rem;color:#475569;margin:2px 0 12px 0">'
+        f'Score medio <b style="color:{color};font-size:1.0rem">{medio}</b>'
+        f'&nbsp;·&nbsp;<span style="color:#16a34a">🟢 {sanos}</span>'
+        f'&nbsp;<span style="color:#b45309">🟡 {aten}</span>'
+        f'&nbsp;<span style="color:#dc2626">🔴 {crit}</span>'
+        '</div>'
+    )
+
 # ── Color por consultor (reutilizado en varias tabs) ──────────────
 _PALETA_CONS = [
     ("#dbeafe", "#1e40af"),  # azul
@@ -509,12 +528,14 @@ with tab_overview:
         if consultores_map and len(nombres) > 1:
             for col, cons in zip(st.columns(len(nombres)), nombres):
                 with col:
-                    st.markdown(header_consultor_html(cons, len(grupos[cons])), unsafe_allow_html=True)
+                    st.markdown(header_consultor_html(cons), unsafe_allow_html=True)
+                    st.markdown(html_stats_consultor(grupos[cons], scores), unsafe_allow_html=True)
                     st.markdown(
                         html_score_cards(grupos[cons], scores, scores_ant),
                         unsafe_allow_html=True,
                     )
         else:
+            st.markdown(html_stats_consultor(list(scores), scores), unsafe_allow_html=True)
             st.markdown(
                 html_score_cards(list(scores), scores, scores_ant),
                 unsafe_allow_html=True,
