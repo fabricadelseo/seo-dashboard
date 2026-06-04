@@ -300,7 +300,7 @@ header[data-testid="stHeader"] { background:transparent; }
 .mini-head p{ color:#6b7280; margin:0; font-size:.9rem; }
 
 /* Tabs estilo menú */
-.stTabs [data-baseweb="tab-list"]{ gap:40px; border-bottom:1px solid #ececf0; margin:40px 0 10px; }
+.stTabs [data-baseweb="tab-list"]{ gap:40px; border-bottom:1px solid #ececf0; margin:0 0 10px; }
 .stTabs [data-baseweb="tab"]{ height:58px; padding:0 2px; color:#111827; background:transparent; }
 .stTabs [data-baseweb="tab"] p{ font-size:1.18rem; font-weight:700; color:#111827; }
 .stTabs [aria-selected="true"]{ color:#111827; background:transparent; }
