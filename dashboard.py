@@ -391,8 +391,8 @@ if hay_consultores and informe:
 # Tabs
 # ──────────────────────────────────────────────
 
-tab_overview, tab_clientes, tab_conv, tab_evolucion, tab_alertas, tab_informe = st.tabs([
-    "Resumen", "Clientes", "Conversiones", "Evolución", "Alertas", "Informe",
+tab_overview, tab_clientes, tab_conv, tab_evolucion, tab_alertas, tab_informe, tab_errores = st.tabs([
+    "Resumen", "Clientes", "Conversiones", "Evolución", "Alertas", "Informe", "Errores",
 ])
 
 
@@ -951,6 +951,38 @@ with tab_informe:
                     continue
                 with st.expander(f"{m.get('recurso', 'Sin nombre')} — {m.get('tipo', '')} ({m.get('fecha', '')})"):
                     st.text(m.get("texto", ""))
+
+
+# ──────────── ERRORES ────────────
+with tab_errores:
+    st.markdown("##### Errores del último run del agente")
+    st.caption("Incidencias al recoger datos esta semana (GA4, GSC, Ahrefs, Asana…). Si un cliente sale aquí, sus métricas pueden estar incompletas.")
+
+    errores = (metricas or {}).get("errores", []) if metricas else []
+
+    if not metricas:
+        st.info("Sin métricas para esta semana.")
+    elif "errores" not in metricas:
+        st.info("Esta semana aún no registra errores (el agente empezará a guardarlos a partir del próximo run).")
+    elif not errores:
+        st.success("✓ Sin errores: todos los clientes se procesaron correctamente.")
+    else:
+        # Resumen por tipo
+        from collections import Counter
+        tipos = Counter(e.get("tipo", "Otro") for e in errores)
+        resumen = " · ".join(f"{t}: {n}" for t, n in tipos.items())
+        st.warning(f"⚠️ **{len(errores)} incidencia(s)** — {resumen}")
+
+        rows_err = [{
+            "Cliente": e.get("cliente", "—"),
+            "Tipo": e.get("tipo", "—"),
+            "Detalle": e.get("mensaje", ""),
+        } for e in errores]
+        st.dataframe(
+            pd.DataFrame(rows_err),
+            use_container_width=True, hide_index=True,
+            column_config={"Detalle": st.column_config.TextColumn("Detalle", width="large")},
+        )
 
 
 # ──────────── Pie ────────────
