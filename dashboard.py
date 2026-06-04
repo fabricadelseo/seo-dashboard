@@ -309,10 +309,16 @@ with tab_overview:
         ("#cffafe", "#155e75"),  # cian
     ]
 
+    _COLOR_CONS_FIJO = {
+        "Tania": ("#dcfce7", "#166534"),  # verde
+    }
+
     def _badge_consultor(cons):
         if not cons or cons == "Sin asignar":
             bg, fg = "#f1f5f9", "#64748b"
             cons = "Sin asignar"
+        elif cons in _COLOR_CONS_FIJO:
+            bg, fg = _COLOR_CONS_FIJO[cons]
         else:
             bg, fg = _PALETA_CONS[sum(map(ord, cons)) % len(_PALETA_CONS)]
         return (f'<span style="background:{bg};color:{fg};border-radius:6px;'
