@@ -289,7 +289,7 @@ def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
 
 head_l, head_c, head_r = st.columns([3, 2, 1])
 with head_l:
-    st.title("Dashboard SEO")
+    st.title("Progress 3.0")
     st.caption("La Fábrica del SEO")
 informes = listar_informes()
 with head_c:
