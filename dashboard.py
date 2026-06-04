@@ -157,49 +157,41 @@ def consultor_de(cliente, consultores_norm):
             return v
     return "Sin asignar"
 
-def fig_bullets(clientes, scores, scores_ant):
-    """Bullet chart (go.Indicator) para un subconjunto de clientes."""
-    clientes_ord = sorted(clientes, key=lambda c: scores[c], reverse=True)
-    n = max(len(clientes_ord), 1)
-    slot = 1.0 / n
-    pad = slot * 0.34
+def tarjeta_score_html(cliente, score, prev):
+    """Tarjeta compacta de score para un cliente."""
+    color = "#ef4444" if score < 50 else ("#eab308" if score < 80 else "#22c55e")
+    bg = "#fef2f2" if score < 50 else ("#fffbeb" if score < 80 else "#f0fdf4")
+    estado = estado_score(score)
+    dl = delta_score(score, prev)
+    if dl is None:
+        delta_html = '<span style="color:#94a3b8;font-size:0.85rem">nuevo</span>'
+    elif dl > 0:
+        delta_html = f'<span style="color:#16a34a;font-weight:700;font-size:0.9rem">▲ +{dl}</span>'
+    elif dl < 0:
+        delta_html = f'<span style="color:#dc2626;font-weight:700;font-size:0.9rem">▼ {dl}</span>'
+    else:
+        delta_html = '<span style="color:#94a3b8;font-size:0.9rem">±0</span>'
+    fill = max(0, min(100, score))
+    return (
+        f'<div style="background:{bg};border:1px solid #e5e7eb;border-radius:10px;'
+        f'padding:12px 14px;margin-bottom:10px">'
+        f'<div style="font-weight:600;color:#0f172a;font-size:0.95rem;margin-bottom:6px">{cliente}</div>'
+        f'<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">'
+        f'<span style="font-size:1.9rem;font-weight:800;color:{color};line-height:1">{score}</span>'
+        f'{delta_html}'
+        f'<span style="margin-left:auto;font-size:0.7rem;text-transform:uppercase;'
+        f'letter-spacing:.4px;color:{color};font-weight:700">{estado}</span>'
+        f'</div>'
+        f'<div style="background:#e5e7eb;border-radius:6px;height:8px;overflow:hidden">'
+        f'<div style="width:{fill}%;background:{color};height:100%"></div>'
+        f'</div>'
+        f'</div>'
+    )
 
-    fig = go.Figure()
-    for i, cliente in enumerate(clientes_ord):
-        score = scores[cliente]
-        prev = scores_ant.get(cliente)
-        color = "#ef4444" if score < 50 else ("#eab308" if score < 80 else "#22c55e")
-        y1 = 1 - i * slot - pad / 2
-        y0 = 1 - (i + 1) * slot + pad / 2
-
-        gauge = dict(
-            shape="bullet",
-            axis=dict(range=[0, 100], tickvals=[0, 50, 80, 100]),
-            bar=dict(color=color, thickness=0.62),
-            bgcolor="rgba(0,0,0,0)",
-            borderwidth=0,
-            steps=[
-                dict(range=[0, 50], color="#fee2e2"),
-                dict(range=[50, 80], color="#fef9c3"),
-                dict(range=[80, 100], color="#dcfce7"),
-            ],
-        )
-        if prev is not None:
-            gauge["threshold"] = dict(
-                line=dict(color="#334155", width=2), thickness=0.85, value=prev
-            )
-
-        fig.add_trace(go.Indicator(
-            mode="number+gauge+delta" if prev is not None else "number+gauge",
-            value=score,
-            delta=dict(reference=prev) if prev is not None else None,
-            gauge=gauge,
-            domain=dict(x=[0.30, 0.90], y=[max(0, y0), min(1, y1)]),
-            title=dict(text=cliente, font=dict(size=12)),
-        ))
-
-    fig.update_layout(height=max(150, n * 76), margin=dict(t=15, b=15, l=10, r=15))
-    return fig
+def html_score_cards(clientes, scores, scores_ant):
+    """Concatena las tarjetas de score de varios clientes (mejor a peor)."""
+    cs = sorted(clientes, key=lambda c: scores[c], reverse=True)
+    return "".join(tarjeta_score_html(c, scores[c], scores_ant.get(c)) for c in cs)
 
 def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
     """Tarjeta-destacado para la portada del Resumen."""
@@ -468,7 +460,7 @@ with tab_overview:
 
     st.divider()
 
-    # Ranking de score por consultor — bullet chart en columnas
+    # Ranking de score por consultor — tarjetas compactas en columnas
     if scores:
         st.markdown("##### Score por cliente")
         grupos = {}
@@ -484,16 +476,16 @@ with tab_overview:
             for col, cons in zip(st.columns(len(nombres)), nombres):
                 with col:
                     st.markdown(f"**{cons}** · {len(grupos[cons])} clientes")
-                    st.plotly_chart(
-                        fig_bullets(grupos[cons], scores, scores_ant),
-                        use_container_width=True, config={"displayModeBar": False},
+                    st.markdown(
+                        html_score_cards(grupos[cons], scores, scores_ant),
+                        unsafe_allow_html=True,
                     )
         else:
-            st.plotly_chart(
-                fig_bullets(list(scores), scores, scores_ant),
-                use_container_width=True, config={"displayModeBar": False},
+            st.markdown(
+                html_score_cards(list(scores), scores, scores_ant),
+                unsafe_allow_html=True,
             )
-        st.caption("Marcador ▏= score de la semana anterior · zonas: rojo <50 · amarillo 50-80 · verde ≥80")
+        st.caption("Δ = variación vs semana anterior · 🔴 <50 · 🟡 50-80 · 🟢 ≥80")
 
 
 # ──────────── CLIENTES ────────────
