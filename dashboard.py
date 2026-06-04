@@ -284,15 +284,66 @@ def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
 
 
 # ──────────────────────────────────────────────
+# Estilos SaaS (CSS global)
+# ──────────────────────────────────────────────
+
+st.markdown("""
+<style>
+:root { --brand:#4f46e5; }
+.stApp { background:#f6f7fb; }
+.block-container { padding-top:1.4rem; max-width:1320px; }
+header[data-testid="stHeader"] { background:transparent; }
+
+/* Hero / banner de marca */
+.saas-hero{
+  background:linear-gradient(120deg,#7c3aed 0%,#4f46e5 45%,#2563eb 100%);
+  border-radius:18px; padding:20px 26px; color:#fff;
+  box-shadow:0 12px 30px rgba(79,70,229,.28);
+  display:flex; align-items:center; gap:14px;
+}
+.saas-hero .logo{ font-size:2rem; line-height:1; }
+.saas-hero h1{ color:#fff!important; font-size:1.8rem; font-weight:800; margin:0; letter-spacing:-.6px; }
+.saas-hero p{ color:rgba(255,255,255,.85); margin:3px 0 0; font-size:.88rem; }
+
+/* Tabs como nav SaaS */
+.stTabs [data-baseweb="tab-list"]{ gap:6px; border-bottom:1px solid #e6e8ee; }
+.stTabs [data-baseweb="tab"]{ height:42px; padding:0 16px; border-radius:10px 10px 0 0; font-weight:600; color:#64748b; }
+.stTabs [aria-selected="true"]{ color:var(--brand); background:#eef2ff; }
+.stTabs [data-baseweb="tab-highlight"]{ background:var(--brand); }
+
+/* Botones */
+.stButton>button{ border-radius:10px; font-weight:600; border:1px solid #e5e7eb; transition:.15s; }
+.stButton>button:hover{ border-color:var(--brand); color:var(--brand); }
+
+/* Inputs / selects */
+[data-baseweb="select"]>div{ border-radius:10px; }
+
+/* Métricas como tarjetas */
+[data-testid="stMetric"]{
+  background:#fff; border:1px solid #eceef2; border-radius:14px;
+  padding:14px 16px; box-shadow:0 1px 2px rgba(16,24,40,.05);
+}
+
+/* Dataframe redondeado */
+[data-testid="stDataFrame"]{ border-radius:12px; overflow:hidden; }
+</style>
+""", unsafe_allow_html=True)
+
+
+# ──────────────────────────────────────────────
 # Cabecera (barra superior, sin sidebar)
 # ──────────────────────────────────────────────
 
-head_l, head_c, head_r = st.columns([3, 2, 1])
-with head_l:
-    st.title("Progress 3.0")
-    st.caption("La Fábrica del SEO")
 informes = listar_informes()
-with head_c:
+hero_col, sel_col, btn_col = st.columns([3.4, 1.5, 1])
+with hero_col:
+    st.markdown(
+        '<div class="saas-hero"><div class="logo">📈</div>'
+        '<div><h1>Progress 3.0</h1>'
+        '<p>La Fábrica del SEO · Panel SEO semanal</p></div></div>',
+        unsafe_allow_html=True,
+    )
+with sel_col:
     if informes:
         fecha_sel = st.selectbox(
             "Semana del informe", informes, index=0,
@@ -301,7 +352,7 @@ with head_c:
     else:
         fecha_sel = None
         st.warning("Aún no hay informes en el bucket.")
-with head_r:
+with btn_col:
     st.write("")
     st.write("")
     if st.button("🔄 Refrescar", use_container_width=True):
