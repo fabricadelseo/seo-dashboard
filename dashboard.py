@@ -388,32 +388,53 @@ with tab_overview:
 
     st.divider()
 
-    # Ranking visual de clientes por score
+    # Ranking visual de clientes por score — bullet chart
     if scores:
-        df_scores = pd.DataFrame([{"Cliente": k, "Score": v} for k, v in scores.items()])
-        df_scores = df_scores.sort_values("Score", ascending=True)
-        colores = df_scores["Score"].apply(
-            lambda s: "#ef4444" if s < 50 else ("#eab308" if s < 80 else "#22c55e")
-        ).tolist()
+        st.markdown("##### Score por cliente")
+        clientes_ord = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+        n = len(clientes_ord)
+        slot = 1.0 / n
+        pad = slot * 0.34
 
-        fig = go.Figure(go.Bar(
-            y=df_scores["Cliente"],
-            x=df_scores["Score"],
-            orientation="h",
-            marker_color=colores,
-            text=df_scores["Score"].astype(str),
-            textposition="outside",
-        ))
-        fig.add_vline(x=80, line_dash="dash", line_color="#22c55e", opacity=0.4, annotation_text="80")
-        fig.add_vline(x=50, line_dash="dash", line_color="#ef4444", opacity=0.4, annotation_text="50")
+        fig = go.Figure()
+        for i, (cliente, score) in enumerate(clientes_ord):
+            prev = scores_ant.get(cliente)
+            color = "#ef4444" if score < 50 else ("#eab308" if score < 80 else "#22c55e")
+            y1 = 1 - i * slot - pad / 2
+            y0 = 1 - (i + 1) * slot + pad / 2
+
+            gauge = dict(
+                shape="bullet",
+                axis=dict(range=[0, 100], tickvals=[0, 50, 80, 100]),
+                bar=dict(color=color, thickness=0.62),
+                bgcolor="rgba(0,0,0,0)",
+                borderwidth=0,
+                steps=[
+                    dict(range=[0, 50], color="#fee2e2"),
+                    dict(range=[50, 80], color="#fef9c3"),
+                    dict(range=[80, 100], color="#dcfce7"),
+                ],
+            )
+            if prev is not None:
+                gauge["threshold"] = dict(
+                    line=dict(color="#334155", width=2), thickness=0.85, value=prev
+                )
+
+            fig.add_trace(go.Indicator(
+                mode="number+gauge+delta" if prev is not None else "number+gauge",
+                value=score,
+                delta=dict(reference=prev) if prev is not None else None,
+                gauge=gauge,
+                domain=dict(x=[0.30, 0.90], y=[y0, y1]),
+                title=dict(text=cliente, font=dict(size=13)),
+            ))
+
         fig.update_layout(
-            height=max(300, len(df_scores) * 46),
-            xaxis=dict(range=[0, 110], title="Score"),
-            yaxis_title="",
-            margin=dict(t=10, b=20, l=10, r=60),
-            showlegend=False,
+            height=max(200, n * 76),
+            margin=dict(t=15, b=15, l=10, r=15),
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        st.caption("Marcador ▏= score de la semana anterior · zonas: rojo <50 · amarillo 50-80 · verde ≥80")
 
 
 # ──────────── CLIENTES ────────────
