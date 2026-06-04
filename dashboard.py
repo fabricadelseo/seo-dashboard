@@ -193,6 +193,28 @@ def html_score_cards(clientes, scores, scores_ant):
     cs = sorted(clientes, key=lambda c: scores[c], reverse=True)
     return "".join(tarjeta_score_html(c, scores[c], scores_ant.get(c)) for c in cs)
 
+def fig_evolucion(clientes, historico, fechas_ord):
+    """Line chart de evolución de score para un conjunto de clientes."""
+    fig = go.Figure()
+    for cliente in sorted(clientes):
+        xs, ys = [], []
+        for f in fechas_ord:
+            v = historico[f].get(cliente)
+            if v is not None:
+                xs.append(f)
+                ys.append(v)
+        if xs:
+            fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines+markers", name=cliente))
+    fig.add_hline(y=80, line_dash="dash", line_color="#22c55e", opacity=0.4, annotation_text="Sano")
+    fig.add_hline(y=50, line_dash="dash", line_color="#ef4444", opacity=0.4, annotation_text="Crítico")
+    fig.update_layout(
+        height=420, hovermode="x unified",
+        yaxis=dict(range=[0, 100], title="Score"), xaxis_title="",
+        margin=dict(t=20, b=10, l=10, r=10),
+        legend=dict(orientation="h", y=-0.15),
+    )
+    return fig
+
 def html_stats_consultor(clientes, scores):
     """Línea-resumen de un consultor: score medio, nº críticos y en atención."""
     vals = [scores[c] for c in clientes if c in scores]
@@ -755,38 +777,27 @@ with tab_evolucion:
             n_semanas = st.slider("Semanas", 2, 20, min(8, len(historico)))
 
         fechas_ord = sorted(historico.keys())[-n_semanas:]
-        data = []
-        for fecha in fechas_ord:
-            for cliente in seleccionados:
-                data.append({
-                    "Fecha": fecha,
-                    "Cliente": cliente,
-                    "Score": historico[fecha].get(cliente),
-                })
-        df = pd.DataFrame(data).dropna(subset=["Score"])
 
-        if df.empty:
-            st.warning("Sin datos para los clientes seleccionados.")
+        if not seleccionados:
+            st.warning("Selecciona al menos un cliente.")
+        elif hay_consultores:
+            # Un gráfico por consultor con los clientes seleccionados de cada uno
+            grupos = {}
+            for c in seleccionados:
+                grupos.setdefault(consultor(c), []).append(c)
+            nombres = sorted(g for g in grupos if g not in ("General", "Sin asignar"))
+            nombres += [g for g in ("Sin asignar",) if g in grupos]
+            for g in nombres:
+                st.markdown(header_consultor_html(g), unsafe_allow_html=True)
+                st.plotly_chart(
+                    fig_evolucion(grupos[g], historico, fechas_ord),
+                    use_container_width=True, key=f"evo_{g}",
+                )
         else:
-            fig = go.Figure()
-            for cliente in seleccionados:
-                df_c = df[df["Cliente"] == cliente]
-                if df_c.empty:
-                    continue
-                fig.add_trace(go.Scatter(
-                    x=df_c["Fecha"], y=df_c["Score"],
-                    mode="lines+markers", name=cliente,
-                ))
-            fig.add_hline(y=80, line_dash="dash", line_color="#22c55e", opacity=0.4, annotation_text="Sano")
-            fig.add_hline(y=50, line_dash="dash", line_color="#ef4444", opacity=0.4, annotation_text="Crítico")
-            fig.update_layout(
-                height=500,
-                hovermode="x unified",
-                yaxis=dict(range=[0, 100], title="Score"),
-                xaxis_title="",
-                margin=dict(t=20, b=10, l=10, r=10),
+            st.plotly_chart(
+                fig_evolucion(seleccionados, historico, fechas_ord),
+                use_container_width=True,
             )
-            st.plotly_chart(fig, use_container_width=True)
 
 
 # ──────────── ALERTAS ────────────
