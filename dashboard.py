@@ -193,6 +193,39 @@ def html_score_cards(clientes, scores, scores_ant):
     cs = sorted(clientes, key=lambda c: scores[c], reverse=True)
     return "".join(tarjeta_score_html(c, scores[c], scores_ant.get(c)) for c in cs)
 
+# ── Color por consultor (reutilizado en varias tabs) ──────────────
+_PALETA_CONS = [
+    ("#dbeafe", "#1e40af"),  # azul
+    ("#fae8ff", "#86198f"),  # fucsia
+    ("#fef3c7", "#92400e"),  # ámbar
+    ("#ffe4e6", "#9f1239"),  # rosa
+    ("#cffafe", "#155e75"),  # cian
+]
+_COLOR_CONS_FIJO = {
+    "Tania": ("#dcfce7", "#166534"),   # verde
+    "Javier": ("#dbeafe", "#1e40af"),  # azul
+}
+
+def color_consultor(cons):
+    """(fondo, texto) para un consultor. Fijos para Tania/Javier, resto automático."""
+    if not cons or cons == "Sin asignar":
+        return ("#f1f5f9", "#64748b")
+    if cons in _COLOR_CONS_FIJO:
+        return _COLOR_CONS_FIJO[cons]
+    return _PALETA_CONS[sum(map(ord, cons)) % len(_PALETA_CONS)]
+
+def badge_consultor_html(cons):
+    bg, fg = color_consultor(cons)
+    nombre = cons if cons and cons != "Sin asignar" else "Sin asignar"
+    return (f'<span style="background:{bg};color:{fg};border-radius:6px;'
+            f'padding:1px 8px;font-size:0.78rem;font-weight:600;margin-left:8px">👤 {nombre}</span>')
+
+def header_consultor_html(cons, n):
+    bg, fg = color_consultor(cons)
+    return (f'<div style="background:{bg};color:{fg};border-radius:8px;'
+            f'padding:6px 12px;font-weight:700;display:inline-block;margin-bottom:8px">'
+            f'👤 {cons} · {n} clientes</div>')
+
 def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
     """Tarjeta-destacado para la portada del Resumen."""
     cuerpo = "".join(
@@ -300,36 +333,12 @@ with tab_overview:
     except Exception:
         fecha_fmt = informe.get("fecha", "")
 
-    _PALETA_CONS = [
-        ("#dbeafe", "#1e40af"),  # azul
-        ("#fae8ff", "#86198f"),  # fucsia
-        ("#dcfce7", "#166534"),  # verde
-        ("#fef3c7", "#92400e"),  # ámbar
-        ("#ffe4e6", "#9f1239"),  # rosa
-        ("#cffafe", "#155e75"),  # cian
-    ]
-
-    _COLOR_CONS_FIJO = {
-        "Tania": ("#dcfce7", "#166534"),  # verde
-    }
-
-    def _badge_consultor(cons):
-        if not cons or cons == "Sin asignar":
-            bg, fg = "#f1f5f9", "#64748b"
-            cons = "Sin asignar"
-        elif cons in _COLOR_CONS_FIJO:
-            bg, fg = _COLOR_CONS_FIJO[cons]
-        else:
-            bg, fg = _PALETA_CONS[sum(map(ord, cons)) % len(_PALETA_CONS)]
-        return (f'<span style="background:{bg};color:{fg};border-radius:6px;'
-                f'padding:1px 8px;font-size:0.78rem;font-weight:600;margin-left:8px">👤 {cons}</span>')
-
     if tareas:
         items = "".join(
             f'<li style="margin-bottom:8px;line-height:1.6">Revisar '
             f'<strong style="color:#0f172a">{c}</strong>'
             f'<span style="color:#94a3b8;font-size:0.9rem"> — {", ".join(m)}</span>'
-            f'{_badge_consultor(cons)}</li>'
+            f'{badge_consultor_html(cons)}</li>'
             for c, m, cons in tareas
         )
         cuerpo = f'<ul style="margin:0;padding-left:20px;color:#334155;font-size:1.0rem">{items}</ul>'
@@ -500,7 +509,7 @@ with tab_overview:
         if consultores_map and len(nombres) > 1:
             for col, cons in zip(st.columns(len(nombres)), nombres):
                 with col:
-                    st.markdown(f"**{cons}** · {len(grupos[cons])} clientes")
+                    st.markdown(header_consultor_html(cons, len(grupos[cons])), unsafe_allow_html=True)
                     st.markdown(
                         html_score_cards(grupos[cons], scores, scores_ant),
                         unsafe_allow_html=True,
@@ -609,10 +618,10 @@ with tab_clientes:
     if hay_consultores and len(grupos) > 1:
         for g in grupos:  # una tabla debajo de la otra
             df_g = df[df["Consultor"] == g]
-            st.markdown(f"**{g}** · {len(df_g)} clientes")
+            st.markdown(header_consultor_html(g, len(df_g)), unsafe_allow_html=True)
             render_tabla_clientes(df_g)
     elif hay_consultores and grupos:
-        st.markdown(f"**{grupos[0]}** · {len(df)} clientes")
+        st.markdown(header_consultor_html(grupos[0], len(df)), unsafe_allow_html=True)
         render_tabla_clientes(df)
     else:
         render_tabla_clientes(df)
@@ -690,10 +699,10 @@ with tab_conv:
         for col, g in zip(st.columns(len(grupos)), grupos):
             with col:
                 df_g = df_conv[df_conv["Consultor"] == g]
-                st.markdown(f"**{g}** · {len(df_g)} clientes")
+                st.markdown(header_consultor_html(g, len(df_g)), unsafe_allow_html=True)
                 render_tabla_conv(df_g)
     elif hay_consultores and grupos:
-        st.markdown(f"**{grupos[0]}** · {len(df_conv)} clientes")
+        st.markdown(header_consultor_html(grupos[0], len(df_conv)), unsafe_allow_html=True)
         render_tabla_conv(df_conv)
     else:
         render_tabla_conv(df_conv)
