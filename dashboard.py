@@ -300,11 +300,22 @@ with tab_overview:
     except Exception:
         fecha_fmt = informe.get("fecha", "")
 
+    _PALETA_CONS = [
+        ("#dbeafe", "#1e40af"),  # azul
+        ("#fae8ff", "#86198f"),  # fucsia
+        ("#dcfce7", "#166534"),  # verde
+        ("#fef3c7", "#92400e"),  # ámbar
+        ("#ffe4e6", "#9f1239"),  # rosa
+        ("#cffafe", "#155e75"),  # cian
+    ]
+
     def _badge_consultor(cons):
         if not cons or cons == "Sin asignar":
-            return ('<span style="background:#f1f5f9;color:#64748b;border-radius:6px;'
-                    'padding:1px 8px;font-size:0.78rem;font-weight:600;margin-left:8px">👤 Sin asignar</span>')
-        return ('<span style="background:#e0e7ff;color:#3730a3;border-radius:6px;'
+            bg, fg = "#f1f5f9", "#64748b"
+            cons = "Sin asignar"
+        else:
+            bg, fg = _PALETA_CONS[sum(map(ord, cons)) % len(_PALETA_CONS)]
+        return (f'<span style="background:{bg};color:{fg};border-radius:6px;'
                 f'padding:1px 8px;font-size:0.78rem;font-weight:600;margin-left:8px">👤 {cons}</span>')
 
     if tareas:
