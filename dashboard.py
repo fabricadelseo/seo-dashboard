@@ -250,6 +250,14 @@ informe = cargar_informe(fecha_sel) if fecha_sel else None
 historico = cargar_scores_historicos()
 metricas = cargar_metricas(fecha_sel) if fecha_sel else cargar_metricas()
 
+# Asignación cliente → consultor (global, usado por varias tabs)
+consultores_map = cargar_consultores()
+consultores_norm = {_norm_cliente(k): v for k, v in consultores_map.items()}
+hay_consultores = bool(consultores_map)
+
+def consultor(cliente):
+    return consultor_de(cliente, consultores_norm)
+
 if not informe and not historico and not metricas:
     st.error("No hay datos disponibles. Espera al próximo lunes o lanza manualmente el agente.")
     st.stop()
@@ -462,12 +470,9 @@ with tab_overview:
     # Ranking de score por consultor — bullet chart en columnas
     if scores:
         st.markdown("##### Score por cliente")
-        consultores_map = cargar_consultores()  # {cliente: consultor}
-        consultores_norm = {_norm_cliente(k): v for k, v in consultores_map.items()}
-
         grupos = {}
         for c in scores:
-            grupos.setdefault(consultor_de(c, consultores_norm), []).append(c)
+            grupos.setdefault(consultor(c), []).append(c)
 
         # Consultores con nombre primero (alfabético); "Sin asignar" al final
         nombres = sorted(g for g in grupos if g != "Sin asignar")
@@ -509,6 +514,7 @@ with tab_clientes:
         fila = {
             " ": color_score(score),
             "Cliente": cliente,
+            "Consultor": consultor(cliente),
             "Score": score,
             "Δ Score": delta_score(score, ant),
             "Estado": estado_score(score),
@@ -530,7 +536,14 @@ with tab_clientes:
     df = pd.DataFrame(filas).sort_values("Score", ascending=False)
 
     # Filtros
-    col1, col2 = st.columns([3, 1])
+    if hay_consultores:
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col3:
+            opciones_cons = ["Todos"] + sorted(df["Consultor"].unique())
+            cons_sel = st.selectbox("Consultor", opciones_cons, index=0)
+    else:
+        col1, col2 = st.columns([3, 1])
+        cons_sel = "Todos"
     with col1:
         busca = st.text_input("Buscar cliente", "", placeholder="Nombre...")
     with col2:
@@ -540,8 +553,12 @@ with tab_clientes:
         df = df[df["Cliente"].str.contains(busca, case=False, na=False)]
     if estados:
         df = df[df["Estado"].isin(estados)]
+    if cons_sel != "Todos":
+        df = df[df["Consultor"] == cons_sel]
 
     cols_show = [" ", "Cliente"]
+    if hay_consultores:
+        cols_show.append("Consultor")
     if tiene_metricas:
         cols_show += ["Conv.", "Δ Conv.", "Revenue", "Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA"]
 
@@ -603,6 +620,7 @@ with tab_conv:
         delta = pct(total, total_prev)
         rows_conv.append({
             "Cliente": c,
+            "Consultor": consultor(c),
             "Conv. actual": total,
             "Conv. anterior": total_prev,
             "Δ %": delta,
@@ -612,6 +630,13 @@ with tab_conv:
         })
 
     df_conv = pd.DataFrame(rows_conv).sort_values("Conv. actual", ascending=False)
+
+    # Filtro por consultor
+    if hay_consultores:
+        opciones_cons = ["Todos"] + sorted(df_conv["Consultor"].unique())
+        cons_sel = st.selectbox("Consultor", opciones_cons, index=0, key="conv_consultor")
+        if cons_sel != "Todos":
+            df_conv = df_conv[df_conv["Consultor"] == cons_sel]
 
     # Aviso: clientes que normalmente tienen conversiones pero esta semana tienen 0
     sin_conv = df_conv[(df_conv["Conv. actual"] == 0) & (df_conv["Conv. anterior"] > 0)]
@@ -623,8 +648,10 @@ with tab_conv:
 
     hay_revenue = df_conv["Revenue (€)"].gt(0).any()
     cols_tbl = ["Cliente", "Conv. actual", "Conv. anterior", "Δ %", "Desglose"]
+    if hay_consultores:
+        cols_tbl.insert(1, "Consultor")
     if hay_revenue:
-        cols_tbl.insert(4, "Revenue (€)")
+        cols_tbl.insert(cols_tbl.index("Δ %") + 1, "Revenue (€)")
 
     col_cfg = {
         "Conv. actual": st.column_config.NumberColumn("Esta semana"),
