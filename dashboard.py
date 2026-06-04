@@ -220,11 +220,11 @@ def badge_consultor_html(cons):
     return (f'<span style="background:{bg};color:{fg};border-radius:6px;'
             f'padding:1px 8px;font-size:0.78rem;font-weight:600;margin-left:8px">👤 {nombre}</span>')
 
-def header_consultor_html(cons, n):
+def header_consultor_html(cons, n=None):
     bg, fg = color_consultor(cons)
     return (f'<div style="background:{bg};color:{fg};border-radius:8px;'
             f'padding:6px 12px;font-weight:700;display:inline-block;margin-bottom:8px">'
-            f'👤 {cons} · {n} clientes</div>')
+            f'👤 {cons}</div>')
 
 def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
     """Tarjeta-destacado para la portada del Resumen."""
