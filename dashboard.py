@@ -299,11 +299,13 @@ header[data-testid="stHeader"] { background:transparent; }
 .mini-head .accent{ width:48px; height:4px; background:var(--brand); border-radius:4px; margin:9px 0 5px; }
 .mini-head p{ color:#6b7280; margin:0; font-size:.9rem; }
 
-/* Tabs minimal con subrayado */
-.stTabs [data-baseweb="tab-list"]{ gap:26px; border-bottom:1px solid #ececf0; }
-.stTabs [data-baseweb="tab"]{ height:40px; padding:0 2px; font-weight:600; color:#9ca3af; background:transparent; }
+/* Tabs estilo menú */
+.stTabs [data-baseweb="tab-list"]{ gap:34px; border-bottom:1px solid #ececf0; }
+.stTabs [data-baseweb="tab"]{ height:52px; padding:0 2px; color:#9ca3af; background:transparent; }
+.stTabs [data-baseweb="tab"] p{ font-size:1.18rem; font-weight:700; }
 .stTabs [aria-selected="true"]{ color:#111827; background:transparent; }
-.stTabs [data-baseweb="tab-highlight"]{ background:var(--brand); height:2px; }
+.stTabs [aria-selected="true"] p{ color:var(--brand); }
+.stTabs [data-baseweb="tab-highlight"]{ background:var(--brand); height:3px; border-radius:3px; }
 
 /* Botones */
 .stButton>button{ border-radius:8px; font-weight:600; border:1px solid #e5e7eb; transition:.15s; }
