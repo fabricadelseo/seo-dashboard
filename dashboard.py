@@ -202,8 +202,8 @@ _PALETA_CONS = [
     ("#cffafe", "#155e75"),  # cian
 ]
 _COLOR_CONS_FIJO = {
-    "Tania": ("#dcfce7", "#166534"),   # verde
-    "Javier": ("#dbeafe", "#1e40af"),  # azul
+    "Javier": ("#ff00ff", "#ffffff"),  # CMYK 0/100/0/0 — magenta
+    "Tania": ("#33cc80", "#ffffff"),   # CMYK 80/20/50/0 — verde
 }
 
 def color_consultor(cons):
