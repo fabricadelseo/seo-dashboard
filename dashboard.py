@@ -695,10 +695,12 @@ with tab_clientes:
 
     # Keywords Ahrefs por cliente
     if tiene_metricas:
+        st.divider()
+        st.markdown("##### 🔑 Keywords (Ahrefs)")
         clientes_con_kw = [c for c, d in metricas["clientes"].items() if d.get("keywords")]
-        if clientes_con_kw:
-            st.divider()
-            st.markdown("##### 🔑 Keywords (Ahrefs)")
+        if not clientes_con_kw:
+            st.info("Sin datos de keywords esta semana. Se poblará con los datos reales del agente (lunes).")
+        else:
             sel_kw = st.selectbox("Cliente", sorted(clientes_con_kw), key="kw_cliente")
             rows_kw = []
             for k in metricas["clientes"][sel_kw].get("keywords", []):
