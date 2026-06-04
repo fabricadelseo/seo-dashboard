@@ -4,6 +4,7 @@ Dashboard semanal SEO — La Fábrica del SEO
 import os
 import json
 import re
+import unicodedata
 from datetime import datetime
 
 import streamlit as st
@@ -137,6 +138,24 @@ def org_pct_cliente(metricas, cliente):
     if not d:
         return None
     return pct(d.get("organic_sessions", 0), d.get("organic_sessions_prev", 0))
+
+def _norm_cliente(s):
+    """Normaliza un nombre de cliente: sin tildes, sin 'seo/+/**', solo alfanumérico."""
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
+    s = s.replace("seo", "")
+    return re.sub(r"[^a-z0-9]", "", s)
+
+def consultor_de(cliente, consultores_norm):
+    """Devuelve el consultor de un cliente usando match normalizado + contains."""
+    nc = _norm_cliente(cliente)
+    if not nc:
+        return "Sin asignar"
+    if nc in consultores_norm:
+        return consultores_norm[nc]
+    for k, v in consultores_norm.items():
+        if len(k) >= 4 and len(nc) >= 4 and (k in nc or nc in k):
+            return v
+    return "Sin asignar"
 
 def fig_bullets(clientes, scores, scores_ant):
     """Bullet chart (go.Indicator) para un subconjunto de clientes."""
@@ -444,10 +463,11 @@ with tab_overview:
     if scores:
         st.markdown("##### Score por cliente")
         consultores_map = cargar_consultores()  # {cliente: consultor}
+        consultores_norm = {_norm_cliente(k): v for k, v in consultores_map.items()}
 
         grupos = {}
         for c in scores:
-            grupos.setdefault(consultores_map.get(c, "Sin asignar"), []).append(c)
+            grupos.setdefault(consultor_de(c, consultores_norm), []).append(c)
 
         # Consultores con nombre primero (alfabético); "Sin asignar" al final
         nombres = sorted(g for g in grupos if g != "Sin asignar")
