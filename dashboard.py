@@ -289,26 +289,26 @@ def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
 
 st.markdown("""
 <style>
-:root { --brand:#4f46e5; }
-.stApp { background:#f6f7fb; }
+:root { --brand:#ff6600; }
+.stApp { background:#f7f7f8; }
 .block-container { padding-top:1.4rem; max-width:1320px; }
 header[data-testid="stHeader"] { background:transparent; }
 
 /* Hero / banner de marca */
 .saas-hero{
-  background:linear-gradient(120deg,#7c3aed 0%,#4f46e5 45%,#2563eb 100%);
+  background:linear-gradient(120deg,#ff8a1e 0%,#ff6600 55%,#ed4e00 100%);
   border-radius:18px; padding:20px 26px; color:#fff;
-  box-shadow:0 12px 30px rgba(79,70,229,.28);
+  box-shadow:0 12px 30px rgba(255,102,0,.28);
   display:flex; align-items:center; gap:14px;
 }
 .saas-hero .logo{ font-size:2rem; line-height:1; }
 .saas-hero h1{ color:#fff!important; font-size:1.8rem; font-weight:800; margin:0; letter-spacing:-.6px; }
-.saas-hero p{ color:rgba(255,255,255,.85); margin:3px 0 0; font-size:.88rem; }
+.saas-hero p{ color:rgba(255,255,255,.9); margin:3px 0 0; font-size:.88rem; }
 
 /* Tabs como nav SaaS */
 .stTabs [data-baseweb="tab-list"]{ gap:6px; border-bottom:1px solid #e6e8ee; }
 .stTabs [data-baseweb="tab"]{ height:42px; padding:0 16px; border-radius:10px 10px 0 0; font-weight:600; color:#64748b; }
-.stTabs [aria-selected="true"]{ color:var(--brand); background:#eef2ff; }
+.stTabs [aria-selected="true"]{ color:var(--brand); background:#fff3e9; }
 .stTabs [data-baseweb="tab-highlight"]{ background:var(--brand); }
 
 /* Botones */
