@@ -696,13 +696,12 @@ with tab_conv:
         grupos.append("Sin asignar")
 
     if hay_consultores and len(grupos) > 1:
-        for col, g in zip(st.columns(len(grupos)), grupos):
-            with col:
-                df_g = df_conv[df_conv["Consultor"] == g]
-                st.markdown(header_consultor_html(g, len(df_g)), unsafe_allow_html=True)
-                render_tabla_conv(df_g)
+        for g in grupos:  # una tabla debajo de la otra
+            df_g = df_conv[df_conv["Consultor"] == g]
+            st.markdown(header_consultor_html(g), unsafe_allow_html=True)
+            render_tabla_conv(df_g)
     elif hay_consultores and grupos:
-        st.markdown(header_consultor_html(grupos[0], len(df_conv)), unsafe_allow_html=True)
+        st.markdown(header_consultor_html(grupos[0]), unsafe_allow_html=True)
         render_tabla_conv(df_conv)
     else:
         render_tabla_conv(df_conv)
