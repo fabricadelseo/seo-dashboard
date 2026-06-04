@@ -362,20 +362,31 @@ with tab_overview:
     idx_actual = fechas_hist.index(informe["fecha"]) if informe["fecha"] in fechas_hist else len(fechas_hist) - 1
     scores_ant = historico[fechas_hist[idx_actual - 1]] if idx_actual > 0 else {}
 
-    # Tareas accionables para Asana — clientes que necesitan revisión
+    # Tareas accionables para Asana — qué revisar en cada cliente según métricas
     tareas = []
     for c in sorted(scores, key=scores.get):  # peor score primero
         s = scores[c]
         dl = delta_score(s, scores_ant.get(c))
+        d = metricas["clientes"].get(c) if (metricas and "clientes" in metricas) else None
         motivos = []
         if s < 50:
-            motivos.append("crítico")
-        if dl is not None and dl < 0:
-            motivos.append(f"{dl:+d} pts")
-        if metricas and "clientes" in metricas:
-            d = metricas["clientes"].get(c)
-            if d and d.get("ga4_ok") and sum(d.get("key_events", {}).values()) == 0:
-                motivos.append("0 conversiones")
+            motivos.append("estado crítico")
+        if d:
+            org = pct(d.get("organic_sessions", 0), d.get("organic_sessions_prev", 0))
+            if org is not None and org <= -10:
+                motivos.append(f"tráfico orgánico ({org:+.0f}%)")
+            gsc = pct(d.get("gsc_clicks", 0), d.get("gsc_clicks_prev", 0))
+            if gsc is not None and gsc <= -10:
+                motivos.append(f"posiciones/clics GSC ({gsc:+.0f}%)")
+            conv = sum(d.get("key_events", {}).values())
+            conv_prev = sum(d.get("key_events_prev", {}).values())
+            conv_pct = pct(conv, conv_prev)
+            if d.get("ga4_ok") and conv == 0:
+                motivos.append("conversiones (0 esta semana)")
+            elif conv_pct is not None and conv_pct <= -20:
+                motivos.append(f"conversiones ({conv_pct:+.0f}%)")
+        if not motivos and dl is not None and dl < 0:
+            motivos.append(f"caída de score ({dl:+d} pts)")
         if motivos:
             tareas.append((c, motivos, consultor(c)))
 
