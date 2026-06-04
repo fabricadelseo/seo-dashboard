@@ -206,17 +206,40 @@ with tab_overview:
     idx_actual = fechas_hist.index(informe["fecha"]) if informe["fecha"] in fechas_hist else len(fechas_hist) - 1
     scores_ant = historico[fechas_hist[idx_actual - 1]] if idx_actual > 0 else {}
 
-    # Conclusión de Claude arriba
+    # Conclusión de Claude arriba — titular de la semana
     secciones = informe.get("secciones", {})
     resumen_claude = next(
         (v for k, v in secciones.items() if any(w in k.upper() for w in ("RESUMEN", "CONCLUSI", "INSIGHT"))),
         None,
     )
-    if resumen_claude:
-        st.info(resumen_claude)
-    elif informe.get("analisis"):
-        primeras = informe["analisis"][:800].strip()
-        st.info(primeras + ("…" if len(informe["analisis"]) > 800 else ""))
+    texto_resumen = resumen_claude
+    if not texto_resumen and informe.get("analisis"):
+        texto_resumen = informe["analisis"][:800].strip()
+        if len(informe["analisis"]) > 800:
+            texto_resumen += "…"
+
+    if texto_resumen:
+        try:
+            fecha_fmt = datetime.strptime(informe["fecha"], "%Y-%m-%d").strftime("%d %b %Y")
+        except Exception:
+            fecha_fmt = informe.get("fecha", "")
+        # Markdown → HTML básico (negritas y saltos) para poder estilar la tarjeta
+        cuerpo = re.sub(r"\*\*(.+?)\*\*", r'<strong style="color:#0f172a">\1</strong>', texto_resumen)
+        cuerpo = cuerpo.replace("\n", "<br>")
+        st.markdown(
+            '<div style="background:linear-gradient(180deg,#f8fafc,#eef2ff);'
+            'border:1px solid #e2e8f0;border-left:5px solid #2563eb;border-radius:12px;'
+            'padding:18px 22px;margin-bottom:4px">'
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+            '<span style="font-size:1.05rem">📌</span>'
+            '<span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.6px;'
+            'color:#2563eb;font-weight:700">Resumen de la semana</span>'
+            f'<span style="font-size:0.74rem;color:#94a3b8;margin-left:auto">{fecha_fmt}</span>'
+            '</div>'
+            f'<div style="font-size:1.02rem;line-height:1.65;color:#334155">{cuerpo}</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
     st.divider()
 
