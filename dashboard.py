@@ -208,7 +208,7 @@ _COLOR_CONS_FIJO = {
 
 def color_consultor(cons):
     """(fondo, texto) para un consultor. Fijos para Tania/Javier, resto automático."""
-    if not cons or cons == "Sin asignar":
+    if not cons or cons in ("Sin asignar", "General"):
         return ("#f1f5f9", "#64748b")
     if cons in _COLOR_CONS_FIJO:
         return _COLOR_CONS_FIJO[cons]
@@ -768,6 +768,24 @@ with tab_alertas:
     if not secciones:
         st.info("No hay secciones de alertas en este informe.")
     else:
+        clientes_inf = list(informe.get("scores", {}).keys())
+
+        def consultor_de_linea(linea):
+            """Atribuye una línea al consultor del cliente que menciona (match más largo)."""
+            nt = _norm_cliente(linea)
+            mejor, mlen = None, 0
+            for c in clientes_inf:
+                nc = _norm_cliente(c)
+                if len(nc) >= 4 and nc in nt and len(nc) > mlen:
+                    mejor, mlen = c, len(nc)
+            return consultor(mejor) if mejor else "General"
+
+        def orden_grupos(keys):
+            nombres = sorted(k for k in keys if k not in ("General", "Sin asignar"))
+            return nombres + [k for k in ("Sin asignar", "General") if k in keys]
+
+        # Secciones por cliente → se separan por consultor; el resto, enteras
+        SPLIT = {"ALERTA", "REPORTING", "PROBLEMA"}
         for clave_busqueda, titulo in [
             ("ALERTA", "Alertas críticas"),
             ("REPORTING", "Reporting incompleto"),
@@ -776,8 +794,20 @@ with tab_alertas:
             ("RESUMEN", "Resumen"),
         ]:
             contenido = next((v for k, v in secciones.items() if clave_busqueda in k.upper()), None)
-            if contenido:
-                with st.expander(titulo, expanded=True):
+            if not contenido:
+                continue
+            with st.expander(titulo, expanded=True):
+                grupos = {}
+                if clave_busqueda in SPLIT and hay_consultores:
+                    for linea in contenido.splitlines():
+                        if linea.strip():
+                            grupos.setdefault(consultor_de_linea(linea), []).append(linea)
+                # Solo separamos si hay al menos un grupo de consultor (no todo General)
+                if grupos and any(g != "General" for g in grupos):
+                    for g in orden_grupos(grupos):
+                        st.markdown(header_consultor_html(g), unsafe_allow_html=True)
+                        st.markdown("\n".join(grupos[g]))
+                else:
                     st.markdown(contenido)
 
 
