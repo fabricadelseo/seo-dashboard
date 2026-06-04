@@ -307,6 +307,16 @@ if not informe and not historico and not metricas:
     st.error("No hay datos disponibles. Espera al próximo lunes o lanza manualmente el agente.")
     st.stop()
 
+# Aviso si hay clientes del informe sin consultor asignado
+if hay_consultores and informe:
+    sin_asignar = [c for c in informe.get("scores", {}) if consultor(c) == "Sin asignar"]
+    if sin_asignar:
+        st.warning(
+            "⚠️ **" + str(len(sin_asignar)) + " cliente(s) sin consultor asignado:** "
+            + ", ".join(sin_asignar)
+            + ".  Añádelos a `consultores.json` para que aparezcan en la columna correcta."
+        )
+
 
 # ──────────────────────────────────────────────
 # Tabs
