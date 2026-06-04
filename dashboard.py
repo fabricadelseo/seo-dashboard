@@ -301,8 +301,8 @@ header[data-testid="stHeader"] { background:transparent; }
 
 /* Tabs estilo menú */
 .stTabs [data-baseweb="tab-list"]{ gap:34px; border-bottom:1px solid #ececf0; }
-.stTabs [data-baseweb="tab"]{ height:52px; padding:0 2px; color:#9ca3af; background:transparent; }
-.stTabs [data-baseweb="tab"] p{ font-size:1.18rem; font-weight:700; }
+.stTabs [data-baseweb="tab"]{ height:52px; padding:0 2px; color:#111827; background:transparent; }
+.stTabs [data-baseweb="tab"] p{ font-size:1.18rem; font-weight:700; color:#111827; }
 .stTabs [aria-selected="true"]{ color:#111827; background:transparent; }
 .stTabs [aria-selected="true"] p{ color:var(--brand); }
 .stTabs [data-baseweb="tab-highlight"]{ background:var(--brand); height:3px; border-radius:3px; }
