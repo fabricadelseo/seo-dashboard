@@ -547,11 +547,23 @@ with tab_overview:
         ]
         clientes_sin_conv = len(nombres_sin_conv)
 
+        # Totales segunda fila (se apilan bajo los de arriba)
+        total_org = sum(d.get("organic_sessions", 0) for d in metricas["clientes"].values())
+        total_org_prev = sum(d.get("organic_sessions_prev", 0) for d in metricas["clientes"].values())
+        total_gsc = sum(d.get("gsc_clicks", 0) for d in metricas["clientes"].values())
+        total_gsc_prev = sum(d.get("gsc_clicks_prev", 0) for d in metricas["clientes"].values())
+        total_ia = sum(sum(d.get("llm", {}).values()) for d in metricas["clientes"].values())
+        total_ia_prev = sum(sum(d.get("llm_prev", {}).values()) for d in metricas["clientes"].values())
+
         st.divider()
         c1, c2, c3, c4 = st.columns([1, 1, 1, 1.4])
         with c1:
             delta_conv = int(total_conv - total_conv_prev) if total_conv_prev else None
             st.metric("Conversiones (total)", total_conv, delta=delta_conv)
+            st.write("")
+            st.metric("Tráfico orgánico", f"{total_org:,.0f}".replace(",", "."),
+                      delta=int(total_org - total_org_prev) if total_org_prev else None,
+                      help="Sesiones orgánicas (GA4), total de la cartera")
         with c2:
             if total_rev:
                 delta_rev = round(total_rev - total_rev_prev, 2) if total_rev_prev else None
@@ -559,10 +571,18 @@ with tab_overview:
                           delta=f"{delta_rev:+.0f} €" if delta_rev is not None else None)
             else:
                 st.metric("Revenue total", "—")
+            st.write("")
+            st.metric("Clics GSC", f"{total_gsc:,.0f}".replace(",", "."),
+                      delta=int(total_gsc - total_gsc_prev) if total_gsc_prev else None,
+                      help="Clics en Search Console, total de la cartera")
         with c3:
             st.metric("Clientes sin conversiones", clientes_sin_conv,
                       delta_color="inverse",
                       help="Clientes con GA4 OK pero 0 conversiones registradas esta semana")
+            st.write("")
+            st.metric("Tráfico IA", f"{total_ia:,.0f}".replace(",", "."),
+                      delta=int(total_ia - total_ia_prev) if total_ia_prev else None,
+                      help="Sesiones desde fuentes IA (ChatGPT, Gemini, Perplexity…), total")
         with c4:
             if nombres_sin_conv:
                 chips = "".join(
@@ -584,28 +604,6 @@ with tab_overview:
                     '<div style="color:#16a34a;font-size:0.9rem">✓ Todos con conversiones</div>',
                     unsafe_allow_html=True,
                 )
-
-        # Segunda fila de KPIs: tráfico orgánico, clics GSC, tráfico IA
-        total_org = sum(d.get("organic_sessions", 0) for d in metricas["clientes"].values())
-        total_org_prev = sum(d.get("organic_sessions_prev", 0) for d in metricas["clientes"].values())
-        total_gsc = sum(d.get("gsc_clicks", 0) for d in metricas["clientes"].values())
-        total_gsc_prev = sum(d.get("gsc_clicks_prev", 0) for d in metricas["clientes"].values())
-        total_ia = sum(sum(d.get("llm", {}).values()) for d in metricas["clientes"].values())
-        total_ia_prev = sum(sum(d.get("llm_prev", {}).values()) for d in metricas["clientes"].values())
-
-        e1, e2, e3, _e4 = st.columns([1, 1, 1, 1.4])
-        with e1:
-            st.metric("Tráfico orgánico", f"{total_org:,.0f}".replace(",", "."),
-                      delta=int(total_org - total_org_prev) if total_org_prev else None,
-                      help="Sesiones orgánicas (GA4), total de la cartera")
-        with e2:
-            st.metric("Clics GSC", f"{total_gsc:,.0f}".replace(",", "."),
-                      delta=int(total_gsc - total_gsc_prev) if total_gsc_prev else None,
-                      help="Clics en Search Console, total de la cartera")
-        with e3:
-            st.metric("Tráfico IA", f"{total_ia:,.0f}".replace(",", "."),
-                      delta=int(total_ia - total_ia_prev) if total_ia_prev else None,
-                      help="Sesiones desde fuentes IA (ChatGPT, Gemini, Perplexity…), total")
 
     st.divider()
 
