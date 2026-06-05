@@ -560,7 +560,7 @@ with tab_overview:
         total_ia_prev = sum(sum(d.get("llm_prev", {}).values()) for d in metricas["clientes"].values())
 
         st.divider()
-        c1, c2, c3, c4 = st.columns([1, 1, 1, 1.4])
+        c1, c2, c3 = st.columns(3)
         with c1:
             delta_conv = int(total_conv - total_conv_prev) if total_conv_prev else None
             st.metric("Conversiones (total)", total_conv, delta=delta_conv)
@@ -588,27 +588,6 @@ with tab_overview:
             st.metric("Tráfico IA", f"{total_ia:,.0f}".replace(",", "."),
                       delta=int(total_ia - total_ia_prev) if total_ia_prev else None,
                       help="Sesiones desde fuentes IA (ChatGPT, Gemini, Perplexity…), total")
-        with c4:
-            if nombres_sin_conv:
-                chips = "".join(
-                    f'<span style="display:inline-block;background:#fef2f2;color:#b91c1c;'
-                    f'border:1px solid #fecaca;border-radius:6px;padding:3px 9px;margin:0 6px 6px 0;'
-                    f'font-size:0.85rem">{c}</span>'
-                    for c in nombres_sin_conv
-                )
-                st.markdown(
-                    '<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.5px;'
-                    'color:#64748b;font-weight:700;margin-bottom:8px">Sin conversiones esta semana</div>'
-                    f'<div>{chips}</div>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.5px;'
-                    'color:#64748b;font-weight:700;margin-bottom:8px">Sin conversiones esta semana</div>'
-                    '<div style="color:#16a34a;font-size:0.9rem">✓ Todos con conversiones</div>',
-                    unsafe_allow_html=True,
-                )
 
     st.divider()
 
