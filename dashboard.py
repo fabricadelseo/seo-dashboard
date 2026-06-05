@@ -134,7 +134,7 @@ def org_pct_cliente(metricas, cliente):
     """% de variación de sesiones orgánicas de un cliente, o None."""
     if not metricas or "clientes" not in metricas:
         return None
-    d = metricas["clientes"].get(cliente)
+    d = cliente_metricas(metricas, cliente)
     if not d:
         return None
     return pct(d.get("organic_sessions", 0), d.get("organic_sessions_prev", 0))
@@ -144,6 +144,19 @@ def _norm_cliente(s):
     s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
     s = s.replace("seo", "")
     return re.sub(r"[^a-z0-9]", "", s)
+
+def cliente_metricas(metricas, cliente):
+    """Métricas de un cliente con match tolerante (ignora ** / SEO / tildes)."""
+    if not metricas or "clientes" not in metricas:
+        return None
+    cl = metricas["clientes"]
+    if cliente in cl:
+        return cl[cliente]
+    nc = _norm_cliente(cliente)
+    for k, v in cl.items():
+        if _norm_cliente(k) == nc:
+            return v
+    return None
 
 def consultor_de(cliente, consultores_norm):
     """Devuelve el consultor de un cliente usando match normalizado + contains."""
@@ -413,7 +426,7 @@ with tab_overview:
     tareas = []
     if metricas and "clientes" in metricas:
         for c in sorted(scores, key=scores.get):  # peor score primero
-            d = metricas["clientes"].get(c)
+            d = cliente_metricas(metricas, c)
             if not d or not d.get("ga4_ok"):
                 continue
             if sum(d.get("key_events", {}).values()) == 0:
@@ -645,8 +658,8 @@ with tab_clientes:
             "Δ Score": delta_score(score, ant),
             "Estado": estado_score(score),
         }
-        if tiene_metricas and cliente in metricas["clientes"]:
-            d = metricas["clientes"][cliente]
+        d = cliente_metricas(metricas, cliente) if tiene_metricas else None
+        if d:
             conv = sum(d.get("key_events", {}).values())
             conv_prev = sum(d.get("key_events_prev", {}).values())
             fila["Conv."] = conv
