@@ -585,6 +585,28 @@ with tab_overview:
                     unsafe_allow_html=True,
                 )
 
+        # Segunda fila de KPIs: tráfico orgánico, clics GSC, tráfico IA
+        total_org = sum(d.get("organic_sessions", 0) for d in metricas["clientes"].values())
+        total_org_prev = sum(d.get("organic_sessions_prev", 0) for d in metricas["clientes"].values())
+        total_gsc = sum(d.get("gsc_clicks", 0) for d in metricas["clientes"].values())
+        total_gsc_prev = sum(d.get("gsc_clicks_prev", 0) for d in metricas["clientes"].values())
+        total_ia = sum(sum(d.get("llm", {}).values()) for d in metricas["clientes"].values())
+        total_ia_prev = sum(sum(d.get("llm_prev", {}).values()) for d in metricas["clientes"].values())
+
+        e1, e2, e3 = st.columns([1, 1, 1])
+        with e1:
+            st.metric("Tráfico orgánico", f"{total_org:,.0f}".replace(",", "."),
+                      delta=int(total_org - total_org_prev) if total_org_prev else None,
+                      help="Sesiones orgánicas (GA4), total de la cartera")
+        with e2:
+            st.metric("Clics GSC", f"{total_gsc:,.0f}".replace(",", "."),
+                      delta=int(total_gsc - total_gsc_prev) if total_gsc_prev else None,
+                      help="Clics en Search Console, total de la cartera")
+        with e3:
+            st.metric("Tráfico IA", f"{total_ia:,.0f}".replace(",", "."),
+                      delta=int(total_ia - total_ia_prev) if total_ia_prev else None,
+                      help="Sesiones desde fuentes IA (ChatGPT, Gemini, Perplexity…), total")
+
     st.divider()
 
     # Ranking de score por consultor — tarjetas compactas en columnas
