@@ -409,33 +409,15 @@ with tab_overview:
     idx_actual = fechas_hist.index(informe["fecha"]) if informe["fecha"] in fechas_hist else len(fechas_hist) - 1
     scores_ant = historico[fechas_hist[idx_actual - 1]] if idx_actual > 0 else {}
 
-    # Tareas accionables para Asana — qué revisar en cada cliente según métricas
+    # Tareas Asana — solo proyectos SIN conversiones esta semana (GA4 OK)
     tareas = []
-    for c in sorted(scores, key=scores.get):  # peor score primero
-        s = scores[c]
-        dl = delta_score(s, scores_ant.get(c))
-        d = metricas["clientes"].get(c) if (metricas and "clientes" in metricas) else None
-        motivos = []
-        if s < 50:
-            motivos.append("estado crítico")
-        if d:
-            org = pct(d.get("organic_sessions", 0), d.get("organic_sessions_prev", 0))
-            if org is not None and org <= -10:
-                motivos.append(f"tráfico orgánico ({org:+.0f}%)")
-            gsc = pct(d.get("gsc_clicks", 0), d.get("gsc_clicks_prev", 0))
-            if gsc is not None and gsc <= -10:
-                motivos.append(f"posiciones/clics GSC ({gsc:+.0f}%)")
-            conv = sum(d.get("key_events", {}).values())
-            conv_prev = sum(d.get("key_events_prev", {}).values())
-            conv_pct = pct(conv, conv_prev)
-            if d.get("ga4_ok") and conv == 0:
-                motivos.append("conversiones (0 esta semana)")
-            elif conv_pct is not None and conv_pct <= -20:
-                motivos.append(f"conversiones ({conv_pct:+.0f}%)")
-        if not motivos and dl is not None and dl < 0:
-            motivos.append(f"caída de score ({dl:+d} pts)")
-        if motivos:
-            tareas.append((c, motivos, consultor(c)))
+    if metricas and "clientes" in metricas:
+        for c in sorted(scores, key=scores.get):  # peor score primero
+            d = metricas["clientes"].get(c)
+            if not d or not d.get("ga4_ok"):
+                continue
+            if sum(d.get("key_events", {}).values()) == 0:
+                tareas.append((c, consultor(c)))
 
     try:
         fecha_fmt = datetime.strptime(informe["fecha"], "%Y-%m-%d").strftime("%d %b %Y")
@@ -446,13 +428,13 @@ with tab_overview:
         items = "".join(
             f'<li style="margin-bottom:8px;line-height:1.6">Revisar '
             f'<strong style="color:#0f172a">{c}</strong>'
-            f'<span style="color:#94a3b8;font-size:0.9rem"> — {", ".join(m)}</span>'
+            f'<span style="color:#94a3b8;font-size:0.9rem"> — ¿problema de implementación de KPIs o no hay conversiones?</span>'
             f'{badge_consultor_html(cons)}</li>'
-            for c, m, cons in tareas
+            for c, cons in tareas
         )
         cuerpo = f'<ul style="margin:0;padding-left:20px;color:#334155;font-size:1.0rem">{items}</ul>'
     else:
-        cuerpo = '<div style="color:#16a34a;font-size:1.0rem">✓ Sin tareas pendientes esta semana</div>'
+        cuerpo = '<div style="color:#16a34a;font-size:1.0rem">✓ Todos los proyectos con conversiones esta semana</div>'
 
     st.markdown(
         '<div style="background:linear-gradient(180deg,#f8fafc,#eef2ff);'
