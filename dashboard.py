@@ -280,6 +280,33 @@ def header_consultor_html(cons, n=None):
             f'padding:6px 12px;font-weight:700;display:inline-block;margin-bottom:8px">'
             f'👤 {cons}</div>')
 
+_PALETA_EVENTO = [
+    ("#eef2ff", "#3730a3"), ("#ecfeff", "#155e75"), ("#f0fdf4", "#166534"),
+    ("#fff7ed", "#9a3412"), ("#fdf4ff", "#86198f"), ("#fef2f2", "#991b1b"),
+    ("#eff6ff", "#1e40af"), ("#fefce8", "#854d0e"), ("#f5f3ff", "#5b21b6"),
+    ("#ecfdf5", "#065f46"),
+]
+
+def color_evento(nombre):
+    return _PALETA_EVENTO[sum(map(ord, nombre)) % len(_PALETA_EVENTO)]
+
+def chips_eventos_html(ke):
+    """Chips de eventos con color por nombre; los de 0 conversiones en gris."""
+    if not ke:
+        return '<span style="color:#94a3b8">—</span>'
+    out = []
+    for k, v in ke.items():
+        if v > 0:
+            bg, fg = color_evento(k)
+        else:
+            bg, fg = "#f1f5f9", "#94a3b8"
+        out.append(
+            f'<span style="display:inline-block;background:{bg};color:{fg};'
+            f'border-radius:6px;padding:2px 8px;margin:0 5px 5px 0;font-size:0.82rem;'
+            f'white-space:nowrap">{k} ({v})</span>'
+        )
+    return "".join(out)
+
 def tarjeta_html(fondo, borde, etiqueta, nombre, lineas):
     """Tarjeta-destacado para la portada del Resumen."""
     cuerpo = "".join(
@@ -779,7 +806,7 @@ with tab_conv:
             "Conv. anterior": total_prev,
             "Δ %": delta,
             "Revenue (€)": d.get("revenue", 0) or 0,
-            "Desglose": ", ".join(f"{k} ({v})" for k, v in ke.items()) if ke else "—",
+            "ke": dict(ke),
             "GA4": "✓" if d.get("ga4_ok") else "✗",
         })
 
@@ -792,29 +819,45 @@ with tab_conv:
             st.warning(f"⚠️ **{row['Cliente']}** no tiene conversiones esta semana, pero la semana anterior tuvo {int(row['Conv. anterior'])}.")
 
     hay_revenue = df_conv["Revenue (€)"].gt(0).any()
-    cols_tbl = ["Cliente", "Conv. actual", "Conv. anterior", "Δ %", "Desglose"]
-    if hay_revenue:
-        cols_tbl.insert(cols_tbl.index("Δ %") + 1, "Revenue (€)")
-
-    col_cfg = {
-        "Conv. actual": st.column_config.NumberColumn("Esta semana"),
-        "Conv. anterior": st.column_config.NumberColumn("Semana anterior"),
-        "Δ %": st.column_config.NumberColumn("Δ %", format="%+.1f%%"),
-        "Desglose": st.column_config.TextColumn("Desglose por evento", width="large"),
-        "Revenue (€)": st.column_config.NumberColumn("Revenue (€)", format="%.0f €"),
-    }
-
-    def _color_delta(series):
-        return [
-            "color: #22c55e; font-weight: 600" if (v is not None and v > 0)
-            else "color: #ef4444; font-weight: 600" if (v is not None and v < 0)
-            else ""
-            for v in series
-        ]
 
     def render_tabla_conv(df_sub):
-        styled = df_sub[cols_tbl].style.apply(_color_delta, subset=["Δ %"])
-        st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_cfg)
+        headers = [("Cliente", "left"), ("Esta semana", "right"),
+                   ("Semana anterior", "right"), ("Δ %", "right")]
+        if hay_revenue:
+            headers.append(("Revenue", "right"))
+        headers.append(("Desglose por evento", "left"))
+        head_html = "".join(
+            f'<th style="text-align:{al};padding:8px 10px;font-size:0.72rem;'
+            f'text-transform:uppercase;letter-spacing:.3px;color:#64748b;'
+            f'border-bottom:2px solid #e5e7eb;white-space:nowrap">{t}</th>'
+            for t, al in headers
+        )
+        bb = "padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top"
+        rows_html = ""
+        for _, r in df_sub.iterrows():
+            dv = r["Δ %"]
+            if dv is None or (isinstance(dv, float) and pd.isna(dv)):
+                dtxt = '<span style="color:#94a3b8">—</span>'
+            else:
+                col = "#16a34a" if dv > 0 else ("#dc2626" if dv < 0 else "#94a3b8")
+                dtxt = f'<span style="color:{col};font-weight:600">{dv:+.1f}%</span>'
+            cells = [
+                f'<td style="{bb}">{r["Cliente"]}</td>',
+                f'<td style="{bb};text-align:right">{int(r["Conv. actual"])}</td>',
+                f'<td style="{bb};text-align:right">{int(r["Conv. anterior"])}</td>',
+                f'<td style="{bb};text-align:right">{dtxt}</td>',
+            ]
+            if hay_revenue:
+                rev = r["Revenue (€)"]
+                rtxt = (f'{rev:,.0f}'.replace(",", ".") + " €") if rev else "—"
+                cells.append(f'<td style="{bb};text-align:right;white-space:nowrap">{rtxt}</td>')
+            cells.append(f'<td style="{bb};line-height:2">{chips_eventos_html(r["ke"])}</td>')
+            rows_html += f'<tr>{"".join(cells)}</tr>'
+        st.markdown(
+            '<table style="width:100%;border-collapse:collapse;font-size:0.88rem">'
+            f'<thead><tr>{head_html}</tr></thead><tbody>{rows_html}</tbody></table>',
+            unsafe_allow_html=True,
+        )
 
     grupos = sorted(g for g in df_conv["Consultor"].unique() if g != "Sin asignar")
     if (df_conv["Consultor"] == "Sin asignar").any():
