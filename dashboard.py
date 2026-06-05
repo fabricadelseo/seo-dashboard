@@ -1,5 +1,5 @@
 """
-Dashboard semanal SEO — La Fábrica del SEO
+Progress 3.0 — Panel SEO semanal — La Fábrica del SEO
 """
 import os
 import json
@@ -15,7 +15,7 @@ from google.cloud import storage
 BUCKET = os.environ.get("DASHBOARD_BUCKET", "seo-dashboard-data-fabricaseo")
 
 st.set_page_config(
-    page_title="Dashboard SEO — La Fábrica del SEO",
+    page_title="Progress 3.0 — La Fábrica del SEO",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed",
