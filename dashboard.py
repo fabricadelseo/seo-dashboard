@@ -546,6 +546,10 @@ with tab_overview:
             if sum(d.get("key_events", {}).values()) == 0 and d.get("ga4_ok")
         ]
         clientes_sin_conv = len(nombres_sin_conv)
+        clientes_sin_conv_prev = sum(
+            1 for d in metricas["clientes"].values()
+            if sum(d.get("key_events_prev", {}).values()) == 0 and d.get("ga4_ok")
+        )
 
         # Totales segunda fila (se apilan bajo los de arriba)
         total_org = sum(d.get("organic_sessions", 0) for d in metricas["clientes"].values())
@@ -577,8 +581,9 @@ with tab_overview:
                       help="Clics en Search Console, total de la cartera")
         with c3:
             st.metric("Clientes sin conversiones", clientes_sin_conv,
+                      delta=clientes_sin_conv - clientes_sin_conv_prev,
                       delta_color="inverse",
-                      help="Clientes con GA4 OK pero 0 conversiones registradas esta semana")
+                      help="Clientes con GA4 OK pero 0 conversiones registradas esta semana (Δ vs semana anterior)")
             st.write("")
             st.metric("Tráfico IA", f"{total_ia:,.0f}".replace(",", "."),
                       delta=int(total_ia - total_ia_prev) if total_ia_prev else None,
