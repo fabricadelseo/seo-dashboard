@@ -691,14 +691,14 @@ with tab_clientes:
     col_config = {
         "Score": st.column_config.ProgressColumn("Score", min_value=0, max_value=100, format="%d"),
         "Δ Score": st.column_config.NumberColumn("Δ Score", format="%+d"),
-        "Conv.": st.column_config.NumberColumn("Conv."),
+        "Conv.": st.column_config.NumberColumn("Conv.", format="%d"),
         "Δ Conv.": st.column_config.NumberColumn("Δ Conv.", format="%+.1f%%"),
-        "Orgánico": st.column_config.NumberColumn("Orgánico"),
+        "Orgánico": st.column_config.NumberColumn("Orgánico", format="%d"),
         "Δ Org.": st.column_config.NumberColumn("Δ Org.", format="%+.1f%%"),
-        "GSC clics": st.column_config.NumberColumn("GSC clics"),
+        "GSC clics": st.column_config.NumberColumn("GSC clics", format="%d"),
         "Δ GSC": st.column_config.NumberColumn("Δ GSC", format="%+.1f%%"),
-        "IA": st.column_config.NumberColumn("IA"),
-        "KW": st.column_config.NumberColumn("KW", help="Nº de keywords en Ahrefs (top por tráfico)"),
+        "IA": st.column_config.NumberColumn("IA", format="%d"),
+        "KW": st.column_config.NumberColumn("KW", format="%d", help="Nº de keywords en Ahrefs (top por tráfico)"),
         "Avance": st.column_config.TextColumn("KW vs semana", help="Keywords que suben (▲) vs bajan (▼) de posición respecto a la semana anterior"),
     }
 
