@@ -707,7 +707,8 @@ with tab_clientes:
                         sube += 1
                     elif pc > pp:
                         baja += 1
-            fila["KW vs semana"] = f"▲{sube} ▼{baja}" if kws else "—"
+            fila["_sube"] = sube if kws else None
+            fila["_baja"] = baja if kws else None
         filas.append(fila)
 
     df = pd.DataFrame(filas).sort_values("Score", ascending=False)
@@ -724,63 +725,61 @@ with tab_clientes:
     if estados:
         df = df[df["Estado"].isin(estados)]
 
-    cols_show = [" ", "Cliente"]
-    if tiene_metricas:
-        cols_show += ["Conv.", "Δ Conv.", "Revenue", "Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA", "KW", "KW vs semana"]
+    def _isna(v):
+        return v is None or (isinstance(v, float) and pd.isna(v))
 
-    col_config = {
-        "Score": st.column_config.ProgressColumn("Score", min_value=0, max_value=100, format="%d"),
-        "Δ Score": st.column_config.NumberColumn("Δ Score", format="%+d"),
-        "Conv.": st.column_config.NumberColumn("Conv.", format="%d"),
-        "Δ Conv.": st.column_config.NumberColumn("Δ Conv.", format="%+.1f%%"),
-        "Orgánico": st.column_config.NumberColumn("Orgánico", format="%d"),
-        "Δ Org.": st.column_config.NumberColumn("Δ Org.", format="%+.1f%%"),
-        "GSC clics": st.column_config.NumberColumn("GSC clics", format="%d"),
-        "Δ GSC": st.column_config.NumberColumn("Δ GSC", format="%+.1f%%"),
-        "IA": st.column_config.NumberColumn("IA", format="%d"),
-        "KW": st.column_config.NumberColumn("KW", format="%d", help="Nº de keywords en Ahrefs (top por tráfico)"),
-        "KW vs semana": st.column_config.TextColumn("KW vs semana", help="Keywords que suben (▲) vs bajan (▼) de posición vs semana anterior. Color: verde si suben más, rojo si bajan más"),
-    }
+    def _numfmt(v):
+        if _isna(v):
+            return "—"
+        try:
+            return f"{int(v):,}".replace(",", ".")
+        except (ValueError, TypeError):
+            return str(v)
 
-    delta_cols = [c for c in cols_show if c.startswith("Δ") and c != "Δ Score"]
-
-    def _color_delta(series):
-        out = []
-        for v in series:
-            if v is None or (isinstance(v, float) and pd.isna(v)):
-                out.append("")
-            elif isinstance(v, (int, float)) and v > 0:
-                out.append("color: #22c55e; font-weight: 600")
-            elif isinstance(v, (int, float)) and v < 0:
-                out.append("color: #ef4444; font-weight: 600")
-            else:
-                out.append("")
-        return out
-
-    def _color_kw(series):
-        out = []
-        for v in series:
-            m = re.findall(r"\d+", str(v))
-            if len(m) == 2:
-                s, b = int(m[0]), int(m[1])
-                if s > b:
-                    out.append("color:#16a34a;font-weight:600")
-                elif b > s:
-                    out.append("color:#dc2626;font-weight:600")
-                else:
-                    out.append("color:#94a3b8")
-            else:
-                out.append("color:#94a3b8")
-        return out
+    def _dpct(v):
+        if _isna(v):
+            return ""
+        c = "#16a34a" if v > 0 else ("#dc2626" if v < 0 else "#94a3b8")
+        return f'<div style="font-size:0.66rem;color:{c};font-weight:600">{v:+.1f}%</div>'
 
     def render_tabla_clientes(df_sub):
-        df_show = df_sub[cols_show]
-        styled = df_show.style
-        if delta_cols:
-            styled = styled.apply(_color_delta, subset=delta_cols)
-        if "KW vs semana" in df_show.columns:
-            styled = styled.apply(_color_kw, subset=["KW vs semana"])
-        st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_config)
+        headers = [("", "center"), ("Cliente", "left"), ("Conv.", "right"),
+                   ("Revenue", "right"), ("Orgánico", "right"), ("GSC", "right"),
+                   ("IA", "right"), ("KW", "right"), ("KW vs sem.", "center")]
+        head_html = "".join(
+            f'<th style="text-align:{al};padding:6px 8px;font-size:0.66rem;'
+            f'text-transform:uppercase;letter-spacing:.3px;color:#64748b;'
+            f'border-bottom:2px solid #e5e7eb;white-space:nowrap">{t}</th>'
+            for t, al in headers
+        )
+        bb = "padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle"
+        rows = ""
+        for _, r in df_sub.iterrows():
+            s, b = r.get("_sube"), r.get("_baja")
+            if _isna(s):
+                kw = '<span style="color:#cbd5e1">—</span>'
+            else:
+                kw = (f'<span style="color:#16a34a;font-weight:700">▲{int(s)}</span> '
+                      f'<span style="color:#dc2626;font-weight:700">▼{int(b)}</span>')
+            rev = r.get("Revenue")
+            rev = "—" if _isna(rev) else str(rev)
+            cells = [
+                f'<td style="{bb};text-align:center">{r[" "]}</td>',
+                f'<td style="{bb};font-weight:500">{r["Cliente"]}</td>',
+                f'<td style="{bb};text-align:right">{_numfmt(r.get("Conv."))}{_dpct(r.get("Δ Conv."))}</td>',
+                f'<td style="{bb};text-align:right;white-space:nowrap">{rev}</td>',
+                f'<td style="{bb};text-align:right">{_numfmt(r.get("Orgánico"))}{_dpct(r.get("Δ Org."))}</td>',
+                f'<td style="{bb};text-align:right">{_numfmt(r.get("GSC clics"))}{_dpct(r.get("Δ GSC"))}</td>',
+                f'<td style="{bb};text-align:right">{_numfmt(r.get("IA"))}</td>',
+                f'<td style="{bb};text-align:right">{_numfmt(r.get("KW"))}</td>',
+                f'<td style="{bb};text-align:center;white-space:nowrap">{kw}</td>',
+            ]
+            rows += f'<tr>{"".join(cells)}</tr>'
+        st.markdown(
+            '<table style="width:100%;border-collapse:collapse;font-size:0.82rem">'
+            f'<thead><tr>{head_html}</tr></thead><tbody>{rows}</tbody></table>',
+            unsafe_allow_html=True,
+        )
 
     # Grupos por consultor (con nombre primero, "Sin asignar" al final)
     grupos = sorted(g for g in df["Consultor"].unique() if g != "Sin asignar")
