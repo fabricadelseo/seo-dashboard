@@ -285,8 +285,8 @@ _CAT_EVENTO = [
     (("purchase", "add_to_cart", "add to cart", "checkout", "cart", "compra",
       "pedido", "view_item", "begin_checkout"), ("#dcfce7", "#166534")),      # verde · compra
     (("whatsapp", "wasap", "whats app", "whats_app"), ("#ccfbf1", "#0f766e")), # teal · whatsapp
-    (("telefono", "teléfono", "phone", "tlf", "llamar", "llamada", "call",
-      "_902", "_965", " 902", " 625", " 965", "telf"), ("#ffedd5", "#9a3412")),# naranja · teléfono
+    (("telef", "teléf", "phone", "tlf", "llamar", "llamada", "call",
+      "_902", "_965", " 902", " 625", " 965"), ("#ffedd5", "#9a3412")),        # naranja · teléfono
     (("email", "mail"), ("#dbeafe", "#1e40af")),                               # azul · email
     (("formulario", "form_", "form ", "contacto", "contact", "lead",
       "presupuesto", "descalific", "suscripcion", "newsletter",
