@@ -280,15 +280,29 @@ def header_consultor_html(cons, n=None):
             f'padding:6px 12px;font-weight:700;display:inline-block;margin-bottom:8px">'
             f'👤 {cons}</div>')
 
-_PALETA_EVENTO = [
-    ("#eef2ff", "#3730a3"), ("#ecfeff", "#155e75"), ("#f0fdf4", "#166534"),
-    ("#fff7ed", "#9a3412"), ("#fdf4ff", "#86198f"), ("#fef2f2", "#991b1b"),
-    ("#eff6ff", "#1e40af"), ("#fefce8", "#854d0e"), ("#f5f3ff", "#5b21b6"),
-    ("#ecfdf5", "#065f46"),
+# Color por TIPO de evento (mismo tipo → mismo color). Se evalúa en orden.
+_CAT_EVENTO = [
+    (("purchase", "add_to_cart", "add to cart", "checkout", "cart", "compra",
+      "pedido", "view_item", "begin_checkout"), ("#dcfce7", "#166534")),      # verde · compra
+    (("whatsapp", "wasap", "whats app", "whats_app"), ("#ccfbf1", "#0f766e")), # teal · whatsapp
+    (("telefono", "teléfono", "phone", "tlf", "llamar", "llamada", "call",
+      "_902", "_965", " 902", " 625", " 965", "telf"), ("#ffedd5", "#9a3412")),# naranja · teléfono
+    (("email", "mail"), ("#dbeafe", "#1e40af")),                               # azul · email
+    (("formulario", "form_", "form ", "contacto", "contact", "lead",
+      "presupuesto", "descalific", "suscripcion", "newsletter",
+      "invernadero", "placas", "masinfo", "mas info"), ("#ede9fe", "#5b21b6")),# morado · formularios/lead
+    (("buscador", "search", "busqueda", "búsqueda"), ("#cffafe", "#155e75")),  # cyan · buscador
+    (("minuto", "tiempo", "scroll", "engagement", "view", "visit",
+      "pageview", "icono", "icon", "boton", "botón"), ("#fef9c3", "#854d0e")), # amarillo · interacción
 ]
+_COLOR_EVENTO_OTROS = ("#e2e8f0", "#475569")  # gris azulado · otros
 
 def color_evento(nombre):
-    return _PALETA_EVENTO[sum(map(ord, nombre)) % len(_PALETA_EVENTO)]
+    n = nombre.lower()
+    for subs, col in _CAT_EVENTO:
+        if any(s in n for s in subs):
+            return col
+    return _COLOR_EVENTO_OTROS
 
 def chips_eventos_html(ke):
     """Chips de eventos con color por nombre; los de 0 conversiones en gris."""
