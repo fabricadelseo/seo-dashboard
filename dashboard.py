@@ -743,14 +743,14 @@ with tab_clientes:
         return f'<div style="font-size:0.66rem;color:{c};font-weight:600">{v:+.1f}%</div>'
 
     def render_tabla_clientes(df_sub):
-        headers = [("", "center"), ("Cliente", "left"), ("Conv.", "right"),
-                   ("Revenue", "right"), ("Orgánico", "right"), ("GSC", "right"),
-                   ("IA", "right"), ("KW", "right"), ("KW vs sem.", "center")]
+        headers = [("", "center", "3%"), ("Cliente", "left", "25%"), ("Conv.", "right", "11%"),
+                   ("Revenue", "right", "8%"), ("Orgánico", "right", "9%"), ("GSC", "right", "11%"),
+                   ("IA", "right", "8%"), ("KW", "right", "8%"), ("KW vs sem.", "center", "17%")]
         head_html = "".join(
-            f'<th style="text-align:{al};padding:6px 8px;font-size:0.66rem;'
+            f'<th style="text-align:{al};width:{w};padding:6px 8px;font-size:0.66rem;'
             f'text-transform:uppercase;letter-spacing:.3px;color:#64748b;'
             f'border-bottom:2px solid #e5e7eb;white-space:nowrap">{t}</th>'
-            for t, al in headers
+            for t, al, w in headers
         )
         bb = "padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle"
         rows = ""
@@ -765,7 +765,7 @@ with tab_clientes:
             rev = "—" if _isna(rev) else str(rev)
             cells = [
                 f'<td style="{bb};text-align:center">{r[" "]}</td>',
-                f'<td style="{bb};font-weight:500">{r["Cliente"]}</td>',
+                f'<td style="{bb};font-weight:500;word-break:break-word">{r["Cliente"]}</td>',
                 f'<td style="{bb};text-align:right">{_numfmt(r.get("Conv."))}{_dpct(r.get("Δ Conv."))}</td>',
                 f'<td style="{bb};text-align:right;white-space:nowrap">{rev}</td>',
                 f'<td style="{bb};text-align:right">{_numfmt(r.get("Orgánico"))}{_dpct(r.get("Δ Org."))}</td>',
@@ -776,7 +776,7 @@ with tab_clientes:
             ]
             rows += f'<tr>{"".join(cells)}</tr>'
         st.markdown(
-            '<table style="width:100%;border-collapse:collapse;font-size:0.82rem">'
+            '<table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:0.82rem">'
             f'<thead><tr>{head_html}</tr></thead><tbody>{rows}</tbody></table>',
             unsafe_allow_html=True,
         )
