@@ -707,7 +707,8 @@ with tab_clientes:
                         sube += 1
                     elif pc > pp:
                         baja += 1
-            fila["Avance"] = f"▲{sube} ▼{baja}" if kws else "—"
+            fila["KW ▲"] = sube if kws else None
+            fila["KW ▼"] = baja if kws else None
         filas.append(fila)
 
     df = pd.DataFrame(filas).sort_values("Score", ascending=False)
@@ -726,7 +727,7 @@ with tab_clientes:
 
     cols_show = [" ", "Cliente"]
     if tiene_metricas:
-        cols_show += ["Conv.", "Δ Conv.", "Revenue", "Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA", "KW", "Avance"]
+        cols_show += ["Conv.", "Δ Conv.", "Revenue", "Orgánico", "Δ Org.", "GSC clics", "Δ GSC", "IA", "KW", "KW ▲", "KW ▼"]
 
     col_config = {
         "Score": st.column_config.ProgressColumn("Score", min_value=0, max_value=100, format="%d"),
@@ -739,7 +740,8 @@ with tab_clientes:
         "Δ GSC": st.column_config.NumberColumn("Δ GSC", format="%+.1f%%"),
         "IA": st.column_config.NumberColumn("IA", format="%d"),
         "KW": st.column_config.NumberColumn("KW", format="%d", help="Nº de keywords en Ahrefs (top por tráfico)"),
-        "Avance": st.column_config.TextColumn("KW vs semana", help="Keywords que suben (▲) vs bajan (▼) de posición respecto a la semana anterior"),
+        "KW ▲": st.column_config.NumberColumn("KW ▲", format="%d", help="Keywords que SUBEN de posición vs semana anterior"),
+        "KW ▼": st.column_config.NumberColumn("KW ▼", format="%d", help="Keywords que BAJAN de posición vs semana anterior"),
     }
 
     delta_cols = [c for c in cols_show if c.startswith("Δ") and c != "Δ Score"]
@@ -757,9 +759,21 @@ with tab_clientes:
                 out.append("")
         return out
 
+    def _color_kw_up(series):
+        return ["color:#16a34a;font-weight:600" if (v and v > 0) else "color:#cbd5e1" for v in series]
+
+    def _color_kw_down(series):
+        return ["color:#dc2626;font-weight:600" if (v and v > 0) else "color:#cbd5e1" for v in series]
+
     def render_tabla_clientes(df_sub):
         df_show = df_sub[cols_show]
-        styled = df_show.style.apply(_color_delta, subset=delta_cols) if delta_cols else df_show.style
+        styled = df_show.style
+        if delta_cols:
+            styled = styled.apply(_color_delta, subset=delta_cols)
+        if "KW ▲" in df_show.columns:
+            styled = styled.apply(_color_kw_up, subset=["KW ▲"])
+        if "KW ▼" in df_show.columns:
+            styled = styled.apply(_color_kw_down, subset=["KW ▼"])
         st.dataframe(styled, use_container_width=True, hide_index=True, column_config=col_config)
 
     # Grupos por consultor (con nombre primero, "Sin asignar" al final)
