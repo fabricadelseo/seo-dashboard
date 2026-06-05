@@ -593,7 +593,7 @@ with tab_overview:
         total_ia = sum(sum(d.get("llm", {}).values()) for d in metricas["clientes"].values())
         total_ia_prev = sum(sum(d.get("llm_prev", {}).values()) for d in metricas["clientes"].values())
 
-        e1, e2, e3 = st.columns([1, 1, 1])
+        e1, e2, e3, _e4 = st.columns([1, 1, 1, 1.4])
         with e1:
             st.metric("Tráfico orgánico", f"{total_org:,.0f}".replace(",", "."),
                       delta=int(total_org - total_org_prev) if total_org_prev else None,
