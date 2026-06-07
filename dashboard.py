@@ -865,7 +865,7 @@ with tab_conv:
             f'border-bottom:2px solid #e5e7eb;white-space:nowrap">{t}</th>'
             for t, al in headers
         )
-        bb = "padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top"
+        bb = "padding:9px 10px;border-bottom:1px solid #cbd5e1;vertical-align:top"
         rows_html = ""
         for _, r in df_sub.iterrows():
             dv = r["Δ %"]
