@@ -766,7 +766,7 @@ with tab_clientes:
             f'border-bottom:2px solid #e5e7eb;white-space:nowrap">{t}</th>'
             for t, al, w in headers
         )
-        bb = "padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle"
+        bb = "padding:7px 8px;border-bottom:1px solid #cbd5e1;vertical-align:middle"
         rows = ""
         for _, r in df_sub.iterrows():
             s, b = r.get("_sube"), r.get("_baja")
