@@ -91,8 +91,13 @@ def cargar_consultores():
 @st.cache_data(ttl=300)
 def cargar_metricas(fecha=None):
     bucket = _client().bucket(BUCKET)
-    nombre = f"metrics/metrics-{fecha}.json" if fecha else "metrics/latest.json"
-    blob = bucket.blob(nombre)
+    if fecha:
+        blob = bucket.blob(f"metrics/metrics-{fecha}.json")
+        if blob.exists():
+            return json.loads(blob.download_as_text())
+        # Fallback: los agentes usan fechas distintas (progress=domingo, asana=lunes),
+        # así que si no hay métricas de la fecha del informe, usamos las más recientes.
+    blob = bucket.blob("metrics/latest.json")
     if not blob.exists():
         return None
     return json.loads(blob.download_as_text())
