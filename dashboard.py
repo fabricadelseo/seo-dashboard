@@ -924,7 +924,7 @@ with tab_evolucion:
             seleccionados = st.multiselect(
                 "Clientes",
                 todos_clientes,
-                default=todos_clientes[:10] if len(todos_clientes) > 10 else todos_clientes,
+                default=todos_clientes,
             )
         with col2:
             n_semanas = st.slider("Semanas", 2, 20, min(8, len(historico)))
