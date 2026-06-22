@@ -979,14 +979,11 @@ with tab_alertas:
             nombres = sorted(k for k in keys if k not in ("General", "Sin asignar"))
             return nombres + [k for k in ("Sin asignar", "General") if k in keys]
 
-        # Secciones por cliente → se separan por consultor; el resto, enteras
-        SPLIT = {"ALERTA", "REPORTING", "PROBLEMA"}
+        # Alertas = SOLO alertas críticas (lo urgente/serio). El resto del informe
+        # (reporting, problemas, insights, resumen) está en la pestaña "Informe".
+        SPLIT = {"ALERTA"}
         for clave_busqueda, titulo in [
             ("ALERTA", "Alertas críticas"),
-            ("REPORTING", "Reporting incompleto"),
-            ("PROBLEMA", "Problemas internos"),
-            ("INSIGHT", "Insights y patrones"),
-            ("RESUMEN", "Resumen"),
         ]:
             contenido = next((v for k, v in secciones.items() if clave_busqueda in k.upper()), None)
             if not contenido:
