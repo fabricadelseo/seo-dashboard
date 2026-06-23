@@ -463,6 +463,35 @@ with tab_overview:
 
     scores = informe.get("scores", {})
 
+    # ── Coste de la ejecución (Claude / IA) ─────────────────────────
+    coste = informe.get("coste")
+    if coste:
+        st.markdown(
+            '<div style="background:linear-gradient(180deg,#fff7ed,#ffffff);'
+            'border:1px solid #fed7aa;border-left:5px solid #ff6600;border-radius:12px;'
+            'padding:16px 22px;margin-bottom:14px;display:flex;align-items:center;gap:18px">'
+            '<span style="font-size:1.7rem">💶</span>'
+            '<div>'
+            '<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.6px;'
+            'color:#c2410c;font-weight:700">Coste de esta ejecución (progress + informe)</div>'
+            f'<div style="font-size:1.7rem;font-weight:800;color:#0f172a;line-height:1.25">'
+            f'{coste.get("eur", 0):.3f} € '
+            f'<span style="font-size:0.95rem;color:#64748b;font-weight:600">(${coste.get("usd", 0):.3f})</span>'
+            '</div>'
+            f'<div style="font-size:0.8rem;color:#94a3b8">{coste.get("modelo", "")} · '
+            f'{coste.get("input_tokens", 0):,} tokens entrada · {coste.get("output_tokens", 0):,} salida'
+            '</div></div></div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;'
+            'padding:14px 22px;margin-bottom:14px;color:#94a3b8;font-size:0.95rem">'
+            '💶 Coste de ejecución: se calculará en el próximo informe generado.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
     # Scores semana anterior
     fechas_hist = sorted(historico.keys())
     idx_actual = fechas_hist.index(informe["fecha"]) if informe["fecha"] in fechas_hist else len(fechas_hist) - 1
