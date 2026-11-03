@@ -81,12 +81,28 @@ def listar_metricas():
     return sorted(fechas, reverse=True)
 
 @st.cache_data(ttl=300)
-def cargar_consultores():
-    """Mapa {cliente: consultor} desde consultores.json en el bucket. {} si no existe."""
+def cargar_consultores_json():
+    """Mapa {cliente: consultor} desde consultores.json en el bucket. {} si no existe.
+
+    Respaldo histórico: la fuente de verdad es la columna `consultor` de la lista
+    de clientes del agente, que llega dentro de las métricas de cada semana.
+    """
     blob = _client().bucket(BUCKET).blob("consultores.json")
     if not blob.exists():
         return {}
     return json.loads(blob.download_as_text())
+
+
+def cargar_consultores(metricas=None):
+    """{cliente: consultor}: manda lo que trae el agente; el JSON solo rellena huecos."""
+    desde_agente = {
+        cliente: datos["consultor"]
+        for cliente, datos in (metricas or {}).get("clientes", {}).items()
+        if isinstance(datos, dict) and datos.get("consultor")
+    }
+    mapa = cargar_consultores_json()
+    mapa.update(desde_agente)
+    return mapa
 
 @st.cache_data(ttl=300)
 def cargar_metricas(fecha=None):
@@ -424,7 +440,7 @@ historico = cargar_scores_historicos()
 metricas = cargar_metricas(fecha_sel) if fecha_sel else cargar_metricas()
 
 # Asignación cliente → consultor (global, usado por varias tabs)
-consultores_map = cargar_consultores()
+consultores_map = cargar_consultores(metricas)
 consultores_norm = {_norm_cliente(k): v for k, v in consultores_map.items()}
 hay_consultores = bool(consultores_map)
 
@@ -442,7 +458,8 @@ if hay_consultores and informe:
         st.warning(
             "⚠️ **" + str(len(sin_asignar)) + " cliente(s) sin consultor asignado:** "
             + ", ".join(sin_asignar)
-            + ".  Añádelos a `consultores.json` para que aparezcan en la columna correcta."
+            + ".  Rellena su columna `consultor` en la lista de clientes del agente "
+              "(secret `proyectos-asana-csv`) para que aparezcan en la columna correcta."
         )
 
 
